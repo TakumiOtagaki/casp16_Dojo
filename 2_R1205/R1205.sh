@@ -1,8 +1,13 @@
+# to run this script;
+    # bash R1203.sh
+# in any directory
+
 . ~/.bashrc
 ml rosetta
 # id 
 export CASP_TARGET=R1205
-cd /large/otgk/casp/casp16/2_${CASP_TARGET}
+export problem_ID=2
+cd /large/otgk/casp/casp16/${problem_ID}_${CASP_TARGET}
 
 echo "rna_denovo"
 rna_denovo.default.linuxgccrelease \
