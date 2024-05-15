@@ -1,57 +1,48 @@
-# Overview
-This Python script facilitates the extraction, merging, and optimization of RNA structures from PDB files using BioPython and Rosetta's rna_denovo tool. Specifically, it handles sequences derived from two different sources: AlphaFold3 and FARFAR2, optimizing the joint structure for further computational studies.
+# RNA構造の統合と最適化のためのREADME
+## 概要
+このPythonスクリプトは、BioPythonとRosettaのrna_denovoツールを使用して、PDBファイルからRNA構造を抽出、マージ、および最適化を行うためのものです。特に、AlphaFold3とFARFAR2から得られる異なるソースのシーケンスを扱う設計になっています。
 
-# Requirements
-Python 3.x: Ensure Python 3 is installed on your system.
-BioPython: Required for handling PDB files.
-Rosetta Software Suite: Required for running rna_denovo for energy optimization.
-Installation
-Install BioPython:
+## 必要条件
+Python 3.x: システムにPython 3がインストールされていることを確認してください。
+BioPython: PDBファイルの操作に必要です。
+Rosettaソフトウェアスイート: エネルギー最適化のためにrna_denovoを実行するために必要です。
+インストール
+BioPythonのインストール:
 
-コードをコピーする
 ```
 pip install biopython
-Install Rosetta:
 ```
+## Rosettaのインストール:
 
+RosettaのウェブサイトからRosettaをダウンロードします（登録とユーザー同意が必要です）。
+サイトに記載されているインストール手順に従ってください。
+スクリプトファイル
+rna_structure_integration.py: 抽出、マージ、およびRosetta呼び出しを行うメインスクリプトです。
+使用方法
+入力ファイルの準備:
 
+PDBファイル（alphafold3.pdbおよびfarfar2.pdb）をスクリプトと同じディレクトリに置きます。
+スクリプトパラメータの編集:
 
-Download Rosetta from the Rosetta website (registration and acceptance of user agreement required).
-Follow the installation instructions provided on the site.
-Script Files
-rna_structure_integration.py: Main script that performs extraction, merging, and calls Rosetta.
-Usage
-Prepare Input Files:
+rna_structure_integration.pyを開きます。
+異なるシーケンスまたはPDBファイルを使用する場合は、スクリプトの冒頭にあるパラメータを変更します。
+スクリプトの実行:
 
-Place your PDB files (alphafold3.pdb and farfar2.pdb) in the same directory as the script.
-Edit Script Parameters:
-
-Open rna_structure_integration.py.
-Modify the parameters at the beginning of the script if different sequences or PDB files are used.
-Run the Script:
-
-bash
-コードをコピーする
+```
 python rna_structure_integration.py
-This will create a merged PDB file and run Rosetta optimization, outputting the results.
+```
+これにより、マージされたPDBファイルが作成され、Rosettaによる最適化が実行され、結果が出力されます。
 
-Important Notes
-Ensure all file paths and names within the script match those on your system.
-Rosetta commands within the script might need adjustments based on your specific installation and system configuration.
-Troubleshooting
-BioPython Errors: Ensure you are using the latest version of BioPython. Compatibility issues may arise with older versions.
-Rosetta Errors: Check the Rosetta log files for specific error messages. Common issues often relate to improper file formats or command syntax.
-Contributing
-Contributions to enhance or extend the functionality of the script are welcome. Please fork the repository and submit a pull request.
-License
-Specify the licensing terms for the use of your script here.
-Contact
-For support or to report issues, please file an issue in the repository or contact the maintainer at [your-contact-email@example.com].
-This README provides a concise guide to setting up and using the provided Python script for RNA structure studies. It ensures users can correctly configure their environment and execute the tasks required for their research objectives.
+### 重要な注意点
+スクリプト内のすべてのファイルパスと名前がシステム上のものと一致していることを確認してください。
+スクリプト内のRosettaコマンドは、特定のインストールやシステム構成に基づいて調整する必要があるかもしれません。
 
 
+## トラブルシューティング
+BioPythonのエラー: 最新バージョンのBioPythonを使用していることを確認してください。古いバージョンでは互換性の問題が発生することがあります。
+Rosettaのエラー: 特定のエラーメッセージについてはRosettaのログファイルを確認してください。一般的な問題は、ファイルフォーマットやコマンド構文が不適切であることが関連しています。
+## コントリビューション
+スクリプトの機能強化や拡張への貢献を歓迎します。リポジトリをフォークしてプルリクエストを送ってください。
 
-
-
-
-
+## ライセンス
+このスクリプトの使用に関するライセンス条件をここに記載してください。
