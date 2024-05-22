@@ -1,0 +1,151 @@
+##############################################################################################################
+#
+# Rosetta crash log. Please submit the contents of this file to http://crash.rosettacommons.org/
+# or use the script Rosetta/main/source/scripts/python/public/report_crashes.py
+#
+
+[START_CRASH_REPORT]
+[ROSETTA_VERSION]: 2024.15+main.d972b59c53
+[COMMIT_DATE]: 2024-04-02T17:06:29
+[APPLICATION]: /large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease
+[MODE]: Release
+[EXTRAS]: default
+[OS]: GNU/Linux
+[COMPILER]: GCC version "11.4.0"
+[STDLIB]: libstdc++ version 20230528
+[START_OPTIONS]
+ -in:show_all_fixes -in:file:s=examples/tmp.pdb -out:nstruct=2 -out:file:silent=examples/rna.out -rna:denovo:minimize_rna -rna:denovo:sequence=aaaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacuc -rna:denovo:secstruct=...((.(((((.....[[[[[[[[......))))).)).......]]]]]]]].......
+
+[END_OPTIONS]
+
+[START_BACKTRACE]: RAW_LIBC
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7f1d1f18e35a]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7f1d1f1cc310]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::UtilityExitException::UtilityExitException(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x113) [0x7f1d1f1934d3]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::exit(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)+0x3b) [0x7f1d1f19311b]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, core::chemical::ResidueTypeSet const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, core::import_pose::ImportPoseOptions const&, bool, core::import_pose::FileType)+0x598) [0x7f1d206c0d68]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, core::import_pose::ImportPoseOptions const&, bool, core::import_pose::FileType)+0x11d) [0x7f1d206c5c6d]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(core::pose::Pose&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool, core::import_pose::FileType)+0x50) [0x7f1d206c5e60]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::import_pose::pose_from_file(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool, core::import_pose::FileType)+0xff) [0x7f1d206c645f]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::get_seq_and_resnum(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, utility::vector1<int, std::allocator<int> >&, utility::vector1<char, std::allocator<char> >&, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&) const+0x45) [0x7f1d217686c5]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::input_pdb_numbering_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::shared_ptr<core::pose::full_model_info::FullModelParameters> const&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<unsigned long, std::allocator<unsigned long> >, std::allocator<utility::vector1<unsigned long, std::allocator<unsigned long> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<int, std::allocator<int> >, std::allocator<utility::vector1<int, std::allocator<int> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, unsigned long&)+0x1ee) [0x7f1d2177576e]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::input_numbering_setup(std::tuple<utility::vector1<int, std::allocator<int> >, utility::vector1<char, std::allocator<char> >, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::tuple<utility::vector1<int, std::allocator<int> >, utility::vector1<char, std::allocator<char> >, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::shared_ptr<core::pose::full_model_info::FullModelParameters> const&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<int, std::allocator<int> >, std::allocator<utility::vector1<int, std::allocator<int> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<unsigned long, std::allocator<unsigned long> >, std::allocator<utility::vector1<unsigned long, std::allocator<unsigned long> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&)+0xa6) [0x7f1d21784b46]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::de_novo_setup_from_options(utility::options::OptionCollection const&)+0x702) [0x7f1d21785972]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xe998) [0x55d49f8fd998]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xff73) [0x55d49f8fef73]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xd1c0) [0x55d49f8fc1c0]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f1d1eb42d90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f1d1eb42e40]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xd335) [0x55d49f8fc335]
+
+[END_BACKTRACE]
+
+[FILE]: src/core/import_pose/import_pose.cc
+[LINE]: 361
+[START_MESSAGE]
+[ ERROR ] UtilityExitException
+ERROR: Cannot open file "examples/tmp.pdb"
+
+
+
+[END_MESSAGE]
+[END_CRASH_REPORT]
+
+##############################################################################################################
+#
+# Rosetta crash log. Please submit the contents of this file to http://crash.rosettacommons.org/
+# or use the script Rosetta/main/source/scripts/python/public/report_crashes.py
+#
+
+[START_CRASH_REPORT]
+[ROSETTA_VERSION]: 2024.15+main.d972b59c53
+[COMMIT_DATE]: 2024-04-02T17:06:29
+[APPLICATION]: rna_extract.linuxgccrelease
+[MODE]: Release
+[EXTRAS]: default
+[OS]: GNU/Linux
+[COMPILER]: GCC version "11.4.0"
+[STDLIB]: libstdc++ version 20230528
+[START_OPTIONS]
+ -in:file:silent=examples/rna.out -in:file:silent_struct_type=rna
+
+[END_OPTIONS]
+
+[START_BACKTRACE]: RAW_LIBC
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7f3df464335a]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7f3df4681310]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::UtilityExitException::UtilityExitException(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x113) [0x7f3df46484d3]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::exit(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)+0x3b) [0x7f3df464811b]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::read_tags_fast(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&) const+0x94a) [0x7f3df6379b7a]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::read_tags_fast(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const+0x46) [0x7f3df6379c46]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::_read_file(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)+0x74) [0x7f3df63832b4]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::read_file(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x45) [0x7f3df6383cd5]
+rna_extract.linuxgccrelease(+0xad36) [0x562ddb102d36]
+rna_extract.linuxgccrelease(+0xbbcf) [0x562ddb103bcf]
+rna_extract.linuxgccrelease(+0x9f5f) [0x562ddb101f5f]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f3df3ff9d90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f3df3ff9e40]
+rna_extract.linuxgccrelease(+0xa095) [0x562ddb102095]
+
+[END_BACKTRACE]
+
+[FILE]: src/core/io/silent/SilentFileData.cc
+[LINE]: 216
+[START_MESSAGE]
+[ ERROR ] UtilityExitException
+ERROR: ERROR: Unable to open silent_input file: 'examples/rna.out'
+
+
+
+[END_MESSAGE]
+[END_CRASH_REPORT]
+
+##############################################################################################################
+#
+# Rosetta crash log. Please submit the contents of this file to http://crash.rosettacommons.org/
+# or use the script Rosetta/main/source/scripts/python/public/report_crashes.py
+#
+
+[START_CRASH_REPORT]
+[ROSETTA_VERSION]: 2024.15+main.d972b59c53
+[COMMIT_DATE]: 2024-04-02T17:06:29
+[APPLICATION]: rna_extract.linuxgccrelease
+[MODE]: Release
+[EXTRAS]: default
+[OS]: GNU/Linux
+[COMPILER]: GCC version "11.4.0"
+[STDLIB]: libstdc++ version 20230528
+[START_OPTIONS]
+ -in:file:silent=examples/rna.out -in:file:silent_struct_type=rna
+
+[END_OPTIONS]
+
+[START_BACKTRACE]: RAW_LIBC
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7fc41779235a]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7fc4177d0310]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::UtilityExitException::UtilityExitException(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x113) [0x7fc4177974d3]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::exit(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)+0x3b) [0x7fc41779711b]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::read_tags_fast(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&) const+0x94a) [0x7fc4194c8b7a]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::read_tags_fast(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const+0x46) [0x7fc4194c8c46]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::_read_file(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)+0x74) [0x7fc4194d22b4]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.3.so(core::io::silent::SilentFileData::read_file(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x45) [0x7fc4194d2cd5]
+rna_extract.linuxgccrelease(+0xad36) [0x55db5cc17d36]
+rna_extract.linuxgccrelease(+0xbbcf) [0x55db5cc18bcf]
+rna_extract.linuxgccrelease(+0x9f5f) [0x55db5cc16f5f]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fc417148d90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7fc417148e40]
+rna_extract.linuxgccrelease(+0xa095) [0x55db5cc17095]
+
+[END_BACKTRACE]
+
+[FILE]: src/core/io/silent/SilentFileData.cc
+[LINE]: 216
+[START_MESSAGE]
+[ ERROR ] UtilityExitException
+ERROR: ERROR: Unable to open silent_input file: 'examples/rna.out'
+
+
+
+[END_MESSAGE]
+[END_CRASH_REPORT]
+

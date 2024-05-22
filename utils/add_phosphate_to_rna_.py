@@ -39,13 +39,13 @@ def parse_args():
     parser.add_argument("--adding_residue", "-r",
                         type=str, default="a", help="Residue to add to the 5' end of the sequence. if you want, you can add more than one residue. However, you should notice all the residues you selected will be attached to the 5' end of the sequence. And you must use lower case.")
     parser.add_argument("--nstruct", "-n", type=int, default=1, help="Number of structures to generate.")
-    parser.add_argument("--output_dir", "-d", type=str, default="./", help="Directory to move output files to. This is because Rosetta generates output files in the current directory. You should execute this script in the directory where you want to store the output files since error may cause when the same name files are already exist in the directory.")
+    # parser.add_argument("--output_dir", "-d", type=str, default="./", help="Directory to move output files to. This is because Rosetta generates output files in the current directory. You should execute this script in the directory where you want to store the output files since error may cause when the same name files are already exist in the directory.")
     args = parser.parse_args()
     return args
 
 
 
-def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct,  rna_denovo_path, finalStructureOut, output_dir):
+def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct,  rna_denovo_path, finalStructureOut):
     if len(extendedSequence) != len(modifiedss):
         print("Error: length of sequence and secondary structure does not match.")
         return
@@ -62,11 +62,11 @@ def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct, 
     print(f"\n\ncmd: {cmd}\n\n\n")
     env = os.environ.copy()
     env["ROSETTA3"] = ROSETTA3
-    subprocess.run(cmd, shell=True, env=env, cwd=output_dir)
+    subprocess.run(cmd, shell=True, env=env)
 
     # .out to pdb
     cmd = f"rna_extract.linuxgccrelease -in:file:silent {finalStructureOut}  -in:file:silent_struct_type rna"
-    subprocess.run(cmd, shell=True, env=env, cwd=output_dir)
+    subprocess.run(cmd, shell=True, env=env)
 
 class IncrementResidueNumbers(Select):
     """ 残基番号を逆順でインクリメントするクラス """
@@ -108,13 +108,13 @@ def main():
     modified_ss = "." + initial_secondary_structure
 
     # tmp_pdb = args.output_dir + "tmp.pdb" should deal with "/"
-    tmp_pdb  = os.path.join(args.output_dir, "tmp.pdb")
+    tmp_pdb  = "tmp.pdb"
 
     # Append residue to the modified structure and renumber
     renumber_residues(args.initial_structure_pdb, tmp_pdb, len(adding))
 
     # Run RNA de novo
-    run_rna_denovo(tmp_pdb, extended_sequence, modified_ss, args.nstruct, rna_denovo_path, args.fiveprime_added_out, args.output_dir)
+    run_rna_denovo(tmp_pdb, extended_sequence, modified_ss, args.nstruct, rna_denovo_path, args.fiveprime_added_out)
 
 
 
