@@ -1,0 +1,49 @@
+##############################################################################################################
+#
+# Rosetta crash log. Please submit the contents of this file to http://crash.rosettacommons.org/
+# or use the script Rosetta/main/source/scripts/python/public/report_crashes.py
+#
+
+[START_CRASH_REPORT]
+[ROSETTA_VERSION]: 2024.15+main.d972b59c53
+[COMMIT_DATE]: 2024-04-02T17:06:29
+[APPLICATION]: UNKNOWN APPLICATION
+[MODE]: Release
+[EXTRAS]: default
+[OS]: GNU/Linux
+[COMPILER]: GCC version "11.4.0"
+[STDLIB]: libstdc++ version 20230528
+[START_OPTIONS]
+NO OPTIONS SPECIFIED
+
+[END_OPTIONS]
+
+[START_BACKTRACE]: RAW_LIBC
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7f12766f735a]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7f1276735310]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::options::OptionCollection::find_key_cl(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)+0x93d) [0x7f1276838cdd]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::options::OptionCollection::load_option_cl(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::list<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x12f) [0x7f1276839a7f]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::options::OptionCollection::load(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::list<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&, bool)+0x138) [0x7f127683c1f8]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::options::OptionCollection::load(int, char* const*, bool)+0x1db) [0x7f127683cc2b]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::init::init_options(int, char**)+0x24) [0x7f126e2056e4]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libcore.6.so(core::init::init(int, char**)+0x31) [0x7f126e209a31]
+rna_cluster.default.linuxgccrelease(+0x9d7a) [0x55c6a4e9bd7a]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f12760add90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f12760ade40]
+rna_cluster.default.linuxgccrelease(+0x9dc5) [0x55c6a4e9bdc5]
+
+[END_BACKTRACE]
+
+[FILE]: src/utility/options/OptionCollection.cc
+[LINE]: 1434
+[START_MESSAGE]
+Unique best command line context option match not found for -sequence.
+Possible matches include:
+	 -relax:sequence
+	 -rna:denovo:sequence
+Either specify namespace from command line; or in code, use add_relevant() to register option.
+
+
+[END_MESSAGE]
+[END_CRASH_REPORT]
+

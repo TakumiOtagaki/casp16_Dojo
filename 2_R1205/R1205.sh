@@ -17,7 +17,9 @@ rna_denovo.default.linuxgccrelease \
  -minimize_rna true \
 
 # .out to .pdb
+mkdir pdb
+cd pdb
 echo "silent file to pdb"
 rna_extract.linuxgccrelease \
- -in:file:silent ${CASP_TARGET}.out \
+ -in:file:silent ../${CASP_TARGET}.out \
  -in:file:silent_struct_type rna \
