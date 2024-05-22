@@ -124,7 +124,7 @@ def main():
     # Adding one residue ('a') to the pose sequence
     adding = args.adding_residue
     extended_sequence = adding + seq 
-    modified_ss = "." + initial_secondary_structure
+    modified_ss = "." * len(adding) + initial_secondary_structure
 
     # tmp_pdb = args.output_dir + "tmp.pdb" should deal with "/"
     tmp_pdb  = "tmp.pdb"
