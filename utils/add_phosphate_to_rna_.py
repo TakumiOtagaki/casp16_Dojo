@@ -18,73 +18,35 @@ from Bio import PDB
 import os
 import subprocess
 
+from modules.myutils import read_ss_file
+
 rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
 pyrosetta_database = "/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/pyrosetta/database/"
 
-def cif2pdb(cif_file, pdb_file):
-    parser = PDB.MMCIFParser()
-    structure = parser.get_structure('RNA', cif_file)
-    io = PDB.PDBIO()
-    io.set_structure(structure)
-    io.save(pdb_file)
-
-def merge_pdbs(output_pdb, *pdbs):
-    with open(output_pdb, 'w') as outfile:
-        for fname in pdbs:
-            with open(fname) as infile:
-                for line in infile:
-                    if line.startswith('ATOM'):
-                        outfile.write(line)
-    adjust_atom_indices(output_pdb)
-
-def adjust_atom_indices(pdb_file):
-    parser = PDB.PDBParser()
-    structure = parser.get_structure('Merged', pdb_file)
-    io = PDB.PDBIO()
-    io.set_structure(structure)
-    io.save(pdb_file)
 
 
-def phosphate_free_structure(pdb_file):
-    pose = pose_from_pdb(pdb_file)
-    print(pose.sequence())
-    return pose
 
-def extract_i_to_j_nucleotides(pdb_file, i, j, fragment_pdb_file):
-    parser = PDB.PDBParser()
-    io = PDB.PDBIO()
-    structure = parser.get_structure('RNA', pdb_file)
-    class ResidueSelect(PDB.Select):
-        def accept_residue(self, residue):
-            # i <= x <= j
-            if residue.id[1] >= i and residue.id[1] <= j:
-                return 1
-            return 0
-    io.set_structure(structure)
-    io.save(fragment_pdb_file, select=ResidueSelect())
-    print(f"Extracted nucleotides from {i} to {j} to {fragment_pdb_file}")
+
+
+
 
 # Read a secondary structure file
 # secstruct format:
     # >filename
     # sequence
     # secondary structure
-def read_ss_file(ss_file):
-    with open(ss_file, "r") as f:
-        lines = f.readlines()
-        filename = lines[0].strip()
-        sequence = lines[1].strip()
-        secstruct = lines[2].strip()
-    return filename, sequence, secstruct
+# def read_ss_file(ss_file):
+    # in modules/myutils.py
 
-def data_loading(pfree_pdb_path, pfree_ss_path):
-    pfree_chunk = phosphate_free_structure(pfree_pdb_path)
-    _, seq, pfree_ss = read_ss_file(pfree_ss_path)
-    assert pfree_chunk.sequence() == seq
+
+def data_loading(pfree_pdb_path, initialSecondaryStructure_path):
+    initialPose = pose_from_pdb(pfree_pdb_path)
+    _, seq, initialSecondaryStructure = read_ss_file(initialSecondaryStructure_path)
+    assert initialPose.sequence() == seq
     print("Data loading is done.")
-    return pfree_chunk, pfree_ss
+    return initialPose, initialSecondaryStructure
 
-def run_rna_denovo(pfree_pdb, padded_seq, padded_ss, nstruct,  rna_denovo_path, result_models_out_path, padded_pdb):
+def run_rna_denovo(pfree_pdb, padded_seq, padded_ss, nstruct,  rna_denovo_path, result_models_out_path, finalStructurePDB):
     if len(padded_seq) != len(padded_ss):
         print("Error: length of sequence and secondary structure does not match.")
         return
@@ -114,11 +76,11 @@ def run_rna_denovo(pfree_pdb, padded_seq, padded_ss, nstruct,  rna_denovo_path, 
     # """
     # cmd = f"rna_extract.linuxgccrelease -in:file:silent {result_models_out_path} \
     #     -in:file:silent_struct_type rna \
-    #     -out:file:silent {padded_pdb}"
+    #     -out:file:silent {finalStructurePDB}"
     # subprocess.run(cmd, shell=True, env=env)
 
     
-def append_residue_to_pose(added_seq, output_tmp_file, input_chunk_pdb, num_of_atoms):
+def append_residue_to_pose(added_seq, output_tmp_file, input_initialStructurePDB, num_of_atoms):
     # ファイル末尾に
         # TER                                                                             
         # ##Begin comments##
@@ -127,7 +89,7 @@ def append_residue_to_pose(added_seq, output_tmp_file, input_chunk_pdb, num_of_a
         # ...
     # のようになっているところがあって、FULL_SEQUENCE の右の配列に文字を付け足せばOK
 
-    with open(input_chunk_pdb, "r") as f:
+    with open(input_initialStructurePDB, "r") as f:
         lines = f.readlines()
         with open(output_tmp_file, "w") as wf:
             print(f"Writing to {output_tmp_file}")
@@ -162,36 +124,35 @@ def append_residue_to_pose(added_seq, output_tmp_file, input_chunk_pdb, num_of_a
 def main():
     # Initialize PyRosetta
     init(extra_options = f"-database {pyrosetta_database}")
-    chunk_pdb = "/large/otgk/casp/casp16/utils/examples/R1205_FF2_S000001.pdb"
-    pfree_secondary_structure_file = "/large/otgk/casp/casp16/2_R1205/ipknot.secstruct"
-    tmp_pdb = "/large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb"
+    initialStructurePDB = "/large/otgk/casp/casp16/utils/examples/R1205_FF2_S000001.pdb"
+    secoudaryStructureFile = "/large/otgk/casp/casp16/2_R1205/ipknot.secstruct"
+    modifiedStructurePDB = "/large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb"
     # with tmp pdb, we should added the residue to the head of the sequence
 
 
     # data loading
-    pfree_chunk, pfree_ss = data_loading(chunk_pdb, pfree_secondary_structure_file)
+    initialPose, initialSecondaryStructure = data_loading(initialStructurePDB, secoudaryStructureFile)
 
     # adding one residue to the pose sequence
     adding, num_of_atoms = "a", 31 # adenine consists of 31 atoms in pdb format
-    added_sequence = adding + pfree_chunk.sequence()
-    print(added_sequence)
+    extendedSequence = adding + initialPose.sequence()
+    print(extendedSequence)
     # added residue must not form any base pair in secondary structure
-    padded_ss = "." + pfree_ss
+    padded_ss = "." + initialSecondaryStructure
 
 
-    # change tmp_pose's seq to added_sequence
-    append_residue_to_pose(added_sequence, tmp_pdb, chunk_pdb, num_of_atoms)
-    # append_residue_to_pose(pfree_chunk.sequence(), tmp_pdb, chunk_pdb)
+    # change tmp_pose's seq to extendedSequence
+    append_residue_to_pose(extendedSequence, modifiedStructurePDB, initialStructurePDB, num_of_atoms)
 
 
-    print(added_sequence)
+    print(extendedSequence)
 
     # run rna_denovo
     nstruct = 3
     result_models_out_path = "/large/otgk/casp/casp16/utils/examples/testR1205_FF2_S000001.out"
-    padded_pdb = "/large/otgk/casp/casp16/utils/examples/test_padded_R1205_FF2_S000001.pdb"
+    finalStructurePDB = "/large/otgk/casp/casp16/utils/examples/test_padded_R1205_FF2_S000001.pdb"
     print(f"Running rna_denovo with {nstruct} structures")
-    run_rna_denovo(tmp_pdb, added_sequence, padded_ss, nstruct, rna_denovo_path, result_models_out_path, padded_pdb)
+    run_rna_denovo(modifiedStructurePDB, extendedSequence, padded_ss, nstruct, rna_denovo_path, result_models_out_path, finalStructurePDB)
 
 
 
