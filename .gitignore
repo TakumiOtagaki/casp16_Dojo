@@ -1,2 +1,3 @@
 *.pdb
 casp16/2_R1205/pdb/*.pdb
+ROSETTA_CRASH.log
