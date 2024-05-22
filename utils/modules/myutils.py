@@ -12,7 +12,11 @@ def extract_i_to_j_nucleotides(pdb_file, i, j, fragment_pdb_file):
     io.save(fragment_pdb_file, select=ResidueSelect())
     print(f"Extracted nucleotides from {i} to {j} to {fragment_pdb_file}")
 
-
+def read_singlefasta(fasta_file):
+    with open(fasta_file, "r") as f:
+        lines = f.readlines()
+        sequence = lines[1].strip()
+    return sequence
 
 def cif2pdb(cif_file, pdb_file):
     parser = PDB.MMCIFParser()

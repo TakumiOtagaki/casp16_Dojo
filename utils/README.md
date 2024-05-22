@@ -17,4 +17,38 @@
 
 
 
+### HOW TO USE
+```sh
+python3 '/large/otgk/casp/casp16/utils/add_phosphate_to_rna_.py' --help
+usage: add_phosphate_to_rna_.py [-h] [--initial_structure_pdb INITIAL_STRUCTURE_PDB] [--fasta FASTA] [--secondary_structure_file SECONDARY_STRUCTURE_FILE] [--fiveprime_added_out FIVEPRIME_ADDED_OUT]
+                                [--adding_residue ADDING_RESIDUE] [--nstruct NSTRUCT] [--output_dir OUTPUT_DIR]
 
+adding a residue to the RNA structure and re-running farfar2 with Rosetta, which enables us to predict the RNA tertiary structure with 5 prime phosphate.
+
+options:
+  -h, --help            show this help message and exit
+  --initial_structure_pdb INITIAL_STRUCTURE_PDB
+                        Path to the initial structure PDB file.
+  --fasta FASTA         Path to the sequence file. The sequence should be in 'single' FASTA format.
+  --secondary_structure_file SECONDARY_STRUCTURE_FILE
+                        Path to the secondary structure file.format: >filename sequence secondary structure
+  --fiveprime_added_out FIVEPRIME_ADDED_OUT
+                        Path for the output silent file from RNA de novo.
+  --adding_residue ADDING_RESIDUE
+                        Residue to add to the 5' end of the sequence. if you want, you can add more than one residue. However, you should notice all the residues you selected will be attached to the 5' end of the
+                        sequence. And you must use lower case.
+  --nstruct NSTRUCT     Number of structures to generate.
+  --output_dir OUTPUT_DIR
+                        Directory to move output files to. This is because Rosetta generates output files in the current directory. You should execute this script in the directory where you want to store the
+                        output files since error may cause when the same name files are already exist in the directory.
+```
+
+.secstruct format should be as following:
+```.secstruct
+>sequence_name
+uuuugcccuuu
+..(.....(()))...
+```
+- line1: sequence name
+- line2: sequence
+- line3: dot bracket rna ss

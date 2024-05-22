@@ -3,9 +3,8 @@
 # conda install pyrosetta
 
 
-# pyrosetta database path is needed;
-    # $(pip show pyrosetta)/pyrosetta/database
-
+# To run this script;
+    # python3 '/large/otgk/casp/casp16/utils/add_phosphate_to_rna_.py' --initial_structure_pdb '/large/otgk/casp/casp16/utils/examples/FF2_R1205_S_000001.pdb' --fasta '/large/otgk/casp/casp16/utils/examples/R1205.fasta' --secondary_structure_file '/large/otgk/casp/casp16/utils/examples/R1205.secstruct' --fiveprime_added_out /large/otgk/casp/casp16/utils/examples/phosphated_R1205_S_000001.out
 from pyrosetta import *
 from pyrosetta.rosetta.core.pose import *
 from pyrosetta.rosetta.core.select.residue_selector import ResidueIndexSelector
@@ -13,34 +12,40 @@ from pyrosetta.rosetta.protocols.minimization_packing import MinMover
 from pyrosetta.rosetta.core.scoring import *
 from pyrosetta.rosetta.protocols.constraint_generator import *
 from pyrosetta.rosetta.protocols.relax import ClassicRelax
-
 from Bio.PDB import PDBParser, PDBIO, Select
 import os
 import subprocess
+from modules.myutils import read_ss_file, read_singlefasta
+import argparse
 
-from modules.myutils import read_ss_file
-
-
+# --------------------------------------------- plz rewrite here!! -----------------------------------------------------
 rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
+ROSETTA3 = "/large/otgk/app/rosetta/v2024.15/source"
 pyrosetta_database = "/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/pyrosetta/database/"
+# ----------------------------------------------------------------------------------------------------------------------
 
-# Read a secondary structure file
-# secstruct format:
-    # >filename
-    # sequence
-    # secondary structure
-# def read_ss_file(ss_file):
-    # in modules/myutils.py
+def parse_args():
+    parser = argparse.ArgumentParser(description="adding a residue to the RNA structure and re-running farfar2 with Rosetta, which enables us to predict the RNA tertiary structure with 5 prime phosphate.")
+    parser.add_argument("--initial_structure_pdb", "-pdb",
+                        help="Path to the initial structure PDB file.")
+    parser.add_argument("--fasta", "-f",
+                        help="Path to the sequence file. The sequence should be in 'single' FASTA format.")
+    parser.add_argument("--secondary_structure_file", "-ss",
+                        help="Path to the secondary structure file.format:\n>filename\nsequence\nsecondary structure")
+    # parser.add_argument("--output_structure_pdb", help="Path for the output modified structure PDB file.")
+    parser.add_argument("--fiveprime_added_out", "-o",
+                         help="Path for the output silent file from RNA de novo.")
+    # parser.add_argument("--5prime_added.pdb", help="Path for the final structure PDB file.")
+    parser.add_argument("--adding_residue", "-r",
+                        type=str, default="a", help="Residue to add to the 5' end of the sequence. if you want, you can add more than one residue. However, you should notice all the residues you selected will be attached to the 5' end of the sequence. And you must use lower case.")
+    parser.add_argument("--nstruct", "-n", type=int, default=1, help="Number of structures to generate.")
+    parser.add_argument("--output_dir", "-d", type=str, default="./", help="Directory to move output files to. This is because Rosetta generates output files in the current directory. You should execute this script in the directory where you want to store the output files since error may cause when the same name files are already exist in the directory.")
+    args = parser.parse_args()
+    return args
 
 
-def data_loading(InitialStructurePDB, initialSecondaryStructure_path):
-    initialPose = pose_from_pdb(InitialStructurePDB)
-    _, seq, initialSecondaryStructure = read_ss_file(initialSecondaryStructure_path)
-    assert initialPose.sequence() == seq
-    print("Data loading is done.")
-    return initialPose, initialSecondaryStructure
 
-def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct,  rna_denovo_path, finalStructureOut, finalStructurePDB):
+def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct,  rna_denovo_path, finalStructureOut, output_dir):
     if len(extendedSequence) != len(modifiedss):
         print("Error: length of sequence and secondary structure does not match.")
         return
@@ -56,15 +61,13 @@ def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct, 
         
     print(f"\n\ncmd: {cmd}\n\n\n")
     env = os.environ.copy()
-    env["ROSETTA3"] = "/large/otgk/app/rosetta/v2024.15/source"
-    subprocess.run(cmd, shell=True, env=env)
+    env["ROSETTA3"] = ROSETTA3
+    subprocess.run(cmd, shell=True, env=env, cwd=output_dir)
 
     # .out to pdb
+    cmd = f"rna_extract.linuxgccrelease -in:file:silent {finalStructureOut}  -in:file:silent_struct_type rna"
+    subprocess.run(cmd, shell=True, env=env, cwd=output_dir)
 
-    cmd = f"rna_extract.linuxgccrelease -in:file:silent {finalStructureOut} \
-        -in:file:silent_struct_type rna \
-        -out:file:silent {finalStructurePDB}"
-    subprocess.run(cmd, shell=True, env=env)
 class IncrementResidueNumbers(Select):
     """ 残基番号を逆順でインクリメントするクラス """
     def __init__(self, increment):
@@ -92,41 +95,26 @@ def renumber_residues(input_file, output_file, increment):
     io.set_structure(structure)
     io.save(output_file)
 
-
-
 def main():
-    # Initialize PyRosetta
-    init(extra_options = f"-database {pyrosetta_database}")
-    initialStructurePDB = "/large/otgk/casp/casp16/utils/examples/R1205_FF2_S000001.pdb"
-    secoudaryStructureFile = "/large/otgk/casp/casp16/2_R1205/ipknot.secstruct"
-    modifiedStructurePDB = "/large/otgk/casp/casp16/utils/examples/modifiedR1205_FF2_S000001.pdb"
-    finalStructureOut = "/large/otgk/casp/casp16/utils/examples/padded_R1205_FF2_S000001.out"
-    finalStructurePDB = "/large/otgk/casp/casp16/utils/examples/padded_R1205_FF2_S000001.pdb"
-    # with tmp pdb, we should added the residue to the head of the sequence
+    args = parse_args()
 
+    # Data loading
+    _, _seq, initial_secondary_structure = read_ss_file(args.secondary_structure_file)
+    seq = read_singlefasta(args.fasta)
 
-    # data loading
-    initialPose, initialSecondaryStructure = data_loading(initialStructurePDB, secoudaryStructureFile)
+    # Adding one residue ('a') to the pose sequence
+    adding = args.adding_residue
+    extended_sequence = adding + seq 
+    modified_ss = "." + initial_secondary_structure
 
-    # adding one residue to the pose sequence
-    adding = "a" # adenine consists of 31 atoms in pdb format
-    extendedSequence = adding + initialPose.sequence()
-    print(extendedSequence)
-    # added residue must not form any base pair in secondary structure
-    modifiedss = "." + initialSecondaryStructure
+    # tmp_pdb = args.output_dir + "tmp.pdb" should deal with "/"
+    tmp_pdb  = os.path.join(args.output_dir, "tmp.pdb")
 
+    # Append residue to the modified structure and renumber
+    renumber_residues(args.initial_structure_pdb, tmp_pdb, len(adding))
 
-    # append residue to the modified structure
-    # append_residue_to_pose(extendedSequence, modifiedStructurePDB, initialStructurePDB, num_of_atoms)
-    renumber_residues(initialStructurePDB, modifiedStructurePDB, len(adding))
-
-
-    print(extendedSequence)
-
-    # run rna_denovo
-    nstruct = 3
-    print(f"Running rna_denovo with {nstruct} structures")
-    run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct, rna_denovo_path, finalStructureOut, finalStructurePDB)
+    # Run RNA de novo
+    run_rna_denovo(tmp_pdb, extended_sequence, modified_ss, args.nstruct, rna_denovo_path, args.fiveprime_added_out, args.output_dir)
 
 
 
