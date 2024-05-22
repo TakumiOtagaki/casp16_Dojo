@@ -14,21 +14,15 @@ from pyrosetta.rosetta.core.scoring import *
 from pyrosetta.rosetta.protocols.constraint_generator import *
 from pyrosetta.rosetta.protocols.relax import ClassicRelax
 
-from Bio import PDB
+from Bio.PDB import PDBParser, PDBIO, Select
 import os
 import subprocess
 
 from modules.myutils import read_ss_file
 
+
 rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
 pyrosetta_database = "/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/pyrosetta/database/"
-
-
-
-
-
-
-
 
 # Read a secondary structure file
 # secstruct format:
@@ -39,94 +33,75 @@ pyrosetta_database = "/home/otgk/.conda/envs/rosetta/lib/python3.10/site-package
     # in modules/myutils.py
 
 
-def data_loading(pfree_pdb_path, initialSecondaryStructure_path):
-    initialPose = pose_from_pdb(pfree_pdb_path)
+def data_loading(InitialStructurePDB, initialSecondaryStructure_path):
+    initialPose = pose_from_pdb(InitialStructurePDB)
     _, seq, initialSecondaryStructure = read_ss_file(initialSecondaryStructure_path)
     assert initialPose.sequence() == seq
     print("Data loading is done.")
     return initialPose, initialSecondaryStructure
 
-def run_rna_denovo(pfree_pdb, padded_seq, padded_ss, nstruct,  rna_denovo_path, result_models_out_path, finalStructurePDB):
-    if len(padded_seq) != len(padded_ss):
+def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct,  rna_denovo_path, finalStructureOut, finalStructurePDB):
+    if len(extendedSequence) != len(modifiedss):
         print("Error: length of sequence and secondary structure does not match.")
         return
     
     cmd = f'{rna_denovo_path} \
-         -s {pfree_pdb} \
-         -sequence "{padded_seq}" \
-         -secstruct "{padded_ss}" \
+         -s {modifiedStructurePDB} \
+         -sequence "{extendedSequence}" \
+         -secstruct "{modifiedss}" \
          -nstruct {nstruct} \
-        -out:file:silent {result_models_out_path} \
-        -minimize_rna true'
+        -out:file:silent {finalStructureOut} \
+        -minimize_rna true \
+        -show_all_fixes'
+        
     print(f"\n\ncmd: {cmd}\n\n\n")
-    # os.system("source ~/.bashrc")
-    # os.system("module load rosetta")
-    # os.system(cmd)
     env = os.environ.copy()
     env["ROSETTA3"] = "/large/otgk/app/rosetta/v2024.15/source"
     subprocess.run(cmd, shell=True, env=env)
 
     # .out to pdb
-    # """
-    # echo "silent file to pdb"
-    # rna_extract.linuxgccrelease \
-    # -in:file:silent ${CASP_TARGET}.out \
-    # -in:file:silent_struct_type rna \
-    # -out:file:silent ${CASP_TARGET}.pdb
-    # """
-    # cmd = f"rna_extract.linuxgccrelease -in:file:silent {result_models_out_path} \
-    #     -in:file:silent_struct_type rna \
-    #     -out:file:silent {finalStructurePDB}"
-    # subprocess.run(cmd, shell=True, env=env)
 
+    cmd = f"rna_extract.linuxgccrelease -in:file:silent {finalStructureOut} \
+        -in:file:silent_struct_type rna \
+        -out:file:silent {finalStructurePDB}"
+    subprocess.run(cmd, shell=True, env=env)
+class IncrementResidueNumbers(Select):
+    """ 残基番号を逆順でインクリメントするクラス """
+    def __init__(self, increment):
+        self.increment = increment
+
+    def accept_residue(self, residue):
+        # 最初に大きな番号に変更して、その後目的の番号に減算
+        new_id = residue.id[1] + self.increment
+        residue.id = (residue.id[0], new_id, residue.id[2])
+        return 1
     
-def append_residue_to_pose(added_seq, output_tmp_file, input_initialStructurePDB, num_of_atoms):
-    # ファイル末尾に
-        # TER                                                                             
-        # ##Begin comments##
-        # BINARY SILENTFILE FULL_MODEL_PARAMETERS  FULL_SEQUENCE gcccggauagcucagucgguagagcagcgggcacuaugggcgcagugucaauggacgcugacgguacaggccagacaauuauugucugguauagugcccgcggguccaggguucaagucccuguucgggcgcca  CONVENTIONAL_RES_CHAIN A:1-134  INPUT_DOMAIN 1-30,98-134  WORKING 1-134
-        # ##End comments##
-        # ...
-    # のようになっているところがあって、FULL_SEQUENCE の右の配列に文字を付け足せばOK
-
-    with open(input_initialStructurePDB, "r") as f:
-        lines = f.readlines()
-        with open(output_tmp_file, "w") as wf:
-            print(f"Writing to {output_tmp_file}")
-            for line in lines:
-                if line.startswith("BINARY SILENTFILE FULL_MODEL_PARAMETERS"):
-                    wf.write(f"BINARY SILENTFILE FULL_MODEL_PARAMETERS  FULL_SEQUENCE {added_seq}\n")
-                elif line.startswith("ATOM"): # most major starting
-                    # ATOM      1  C5'   A A   1       2.322   1.219   0.000  1.00  0.00           C  
-                    # ATOM      2  C4'   A A   1       3.793   0.984   0.237  1.00  0.00           C  
-                    # ATOM      3  O4'   A A   1       3.940   0.414   1.570  1.00  0.00           O  
-                    # ATOM      4  C3'   A A   1       4.479   0.022  -0.722  1.00  0.00           C  
-                    # ATOM      5  O3'   A A   1       5.828   0.366  -0.982  1.00  0.00           O  
-                    # ATOM      6  C1'   A A   1       4.630  -0.825   1.489  1.00  0.00           C  
-                    # ATOM      7  C2'   A A   1       4.461  -1.295   0.049  1.00  0.00           C  
-                    # ATOM      8  O2'   A A   1       5.573  -2.109  -0.296  1.00  0.00           O  
-                    # ATOM      9  N1    A A   1       5.445  -3.947   5.506  1.00  0.00           N  
-                    # ATOM     10  C2    A A   1       6.267  -3.169   4.789  1.00  0.00           C  
-                    # インデックスを "a" が含んでいる原子の数だけインクリメントする
-                    index_ = int(line.split()[1])
-                    index_ += num_of_atoms
-                    print(f"index_: {index_}")
-                    wf.write(f"{line[:6]}{index_:>4}{line[10:]}")
-                else:
-                    wf.write(line)
-
-
-
-
-    return 
+def renumber_residues(input_file, output_file, increment):
+    parser = PDBParser()
+    structure = parser.get_structure('PDB', input_file)
     
+    # 残基を逆順で処理するために、リストを逆転
+    for model in structure:
+        for chain in model:
+            residues = list(chain.get_residues())
+            residues.reverse()
+            for residue in residues:
+                residue.id = (residue.id[0], residue.id[1] + increment, residue.id[2])
+
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save(output_file)
+
+
 
 def main():
     # Initialize PyRosetta
     init(extra_options = f"-database {pyrosetta_database}")
     initialStructurePDB = "/large/otgk/casp/casp16/utils/examples/R1205_FF2_S000001.pdb"
     secoudaryStructureFile = "/large/otgk/casp/casp16/2_R1205/ipknot.secstruct"
-    modifiedStructurePDB = "/large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb"
+    modifiedStructurePDB = "/large/otgk/casp/casp16/utils/examples/modifiedR1205_FF2_S000001.pdb"
+    finalStructureOut = "/large/otgk/casp/casp16/utils/examples/padded_R1205_FF2_S000001.out"
+    finalStructurePDB = "/large/otgk/casp/casp16/utils/examples/padded_R1205_FF2_S000001.pdb"
     # with tmp pdb, we should added the residue to the head of the sequence
 
 
@@ -134,25 +109,24 @@ def main():
     initialPose, initialSecondaryStructure = data_loading(initialStructurePDB, secoudaryStructureFile)
 
     # adding one residue to the pose sequence
-    adding, num_of_atoms = "a", 31 # adenine consists of 31 atoms in pdb format
+    adding = "a" # adenine consists of 31 atoms in pdb format
     extendedSequence = adding + initialPose.sequence()
     print(extendedSequence)
     # added residue must not form any base pair in secondary structure
-    padded_ss = "." + initialSecondaryStructure
+    modifiedss = "." + initialSecondaryStructure
 
 
-    # change tmp_pose's seq to extendedSequence
-    append_residue_to_pose(extendedSequence, modifiedStructurePDB, initialStructurePDB, num_of_atoms)
+    # append residue to the modified structure
+    # append_residue_to_pose(extendedSequence, modifiedStructurePDB, initialStructurePDB, num_of_atoms)
+    renumber_residues(initialStructurePDB, modifiedStructurePDB, len(adding))
 
 
     print(extendedSequence)
 
     # run rna_denovo
     nstruct = 3
-    result_models_out_path = "/large/otgk/casp/casp16/utils/examples/testR1205_FF2_S000001.out"
-    finalStructurePDB = "/large/otgk/casp/casp16/utils/examples/test_padded_R1205_FF2_S000001.pdb"
     print(f"Running rna_denovo with {nstruct} structures")
-    run_rna_denovo(modifiedStructurePDB, extendedSequence, padded_ss, nstruct, rna_denovo_path, result_models_out_path, finalStructurePDB)
+    run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct, rna_denovo_path, finalStructureOut, finalStructurePDB)
 
 
 
@@ -162,107 +136,3 @@ if __name__ == "__main__":
 
 
 
-
-"""
-ERRORS:
-
-cmd: /large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease          -s /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb          -sequence "aaaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacuc"          -secstruct "...((.(((((.....[[[[[[[[......))))).)).......]]]]]]]]......."          -nstruct 3         -out:file:silent /large/otgk/casp/casp16/utils/examples/testR1205_FF2_S000001.out         -minimize_rna true
-
-
-
-
-Basic usage:  /large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease  -fasta <fasta file with sequence>  [ -native <native pdb file> ] 
-
- Type -help for full slate of options.
-
-********  (C) Copyright Rosetta Commons Member Institutions.  ***************
-* Use of Rosetta for commercial purposes may require purchase of a license. *
-********  See LICENSE.md or email license@uw.edu for more details. **********
-core.init: Checking for fconfig files in pwd and ./rosetta/flags 
-core.init: Rosetta version: 2024.15+main.d972b59c53 d972b59c530a12affcbe0eb4a24eedc3ce7d5060 git@github.com:RosettaCommons/rosetta.git 2024-04-02T17:06:29
-core.init: Rosetta extras: []
-core.init: command: /large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease -s /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb -sequence aaaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacuc -secstruct ...((.(((((.....[[[[[[[[......))))).)).......]]]]]]]]....... -nstruct 3 -out:file:silent /large/otgk/casp/casp16/utils/examples/testR1205_FF2_S000001.out -minimize_rna true
-basic.random.init_random_generator: 'RNG device' seed mode, using '/dev/urandom', seed=-279197074 seed_offset=0 real_seed=-279197074
-basic.random.init_random_generator: RandomGenerator:init: Normal mode, seed=-279197074 RG_type=mt19937
-core.init: Resolved executable path: /large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/rna_denovo.default.linuxgccrelease
-core.init: Looking for database based on location of executable: /large/otgk/app/rosetta/v2024.15/database/
-core.chemical.GlobalResidueTypeSet: Finished initializing fa_standard residue type set.  Created 985 residue types
-core.chemical.GlobalResidueTypeSet: Total time to initialize 0.935146 seconds.
-core.import_pose.import_pose: File '/large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb' automatically determined to be of type PDB
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover:    pdb_seq: aaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacuc
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: target_seq: aaaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacu
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 3
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 4
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 5
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target a at 6
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 9
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 10
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 12
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 14
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target g at 15
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 18
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 19
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target a at 20
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 21
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 22
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 24
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target u at 26
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target g at 28
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 30
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target g at 31
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 32
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target g at 37
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 38
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 39
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target a at 40
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 41
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 42
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 43
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 44
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 45
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 47
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target u at 48
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 49
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 50
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 51
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target g at 53
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 54
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 55
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target g at 56
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target a at 57
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 58
-protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 59
-
-ERROR: The sequence in /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb does not match target sequence!!
-ERROR:: Exit from: src/protocols/rna/denovo/movers/RNA_DeNovoProtocolMover.cc line: 812
-
-[ ERROR ]: Caught exception:
-
-
-File: src/protocols/rna/denovo/movers/RNA_DeNovoProtocolMover.cc:812
-[ ERROR ] UtilityExitException
-ERROR: The sequence in /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb does not match target sequence!!
-
-
- ------------------------ Begin developer's backtrace ------------------------- 
-BACKTRACE:
-/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7fd73e79135a]
-/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7fd73e7cf310]
-/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::UtilityExitException::UtilityExitException(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x113) [0x7fd73e7964d3]
-/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::exit(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)+0x3b) [0x7fd73e79611b]
-/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::input_pdb_numbering_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::shared_ptr<core::pose::full_model_info::FullModelParameters> const&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<unsigned long, std::allocator<unsigned long> >, std::allocator<utility::vector1<unsigned long, std::allocator<unsigned long> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<int, std::allocator<int> >, std::allocator<utility::vector1<int, std::allocator<int> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, unsigned long&)+0xbc3) [0x7fd740d79143]
-/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::input_numbering_setup(std::tuple<utility::vector1<int, std::allocator<int> >, utility::vector1<char, std::allocator<char> >, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::tuple<utility::vector1<int, std::allocator<int> >, utility::vector1<char, std::allocator<char> >, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::shared_ptr<core::pose::full_model_info::FullModelParameters> const&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<int, std::allocator<int> >, std::allocator<utility::vector1<int, std::allocator<int> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<unsigned long, std::allocator<unsigned long> >, std::allocator<utility::vector1<unsigned long, std::allocator<unsigned long> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&)+0xa6) [0x7fd740d87b46]
-/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::de_novo_setup_from_options(utility::options::OptionCollection const&)+0x702) [0x7fd740d88972]
-/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xe998) [0x55f885fc9998]
-/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xff73) [0x55f885fcaf73]
-/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xd1c0) [0x55f885fc81c0]
-/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fd73e145d90]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7fd73e145e40]
-/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xd335) [0x55f885fc8335]
- ------------------------- End developer's backtrace -------------------------- 
-
-
-AN INTERNAL ERROR HAS OCCURED. PLEASE SEE THE CONTENTS OF ROSETTA_CRASH.log FOR DETAILS.
-
-
-"""
