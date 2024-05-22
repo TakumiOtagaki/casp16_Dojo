@@ -5,13 +5,7 @@
 
 # To run this script;
     # python3 '/large/otgk/casp/casp16/utils/add_phosphate_to_rna_.py' --initial_structure_pdb '/large/otgk/casp/casp16/utils/examples/FF2_R1205_S_000001.pdb' --fasta '/large/otgk/casp/casp16/utils/examples/R1205.fasta' --secondary_structure_file '/large/otgk/casp/casp16/utils/examples/R1205.secstruct' --fiveprime_added_out /large/otgk/casp/casp16/utils/examples/phosphated_R1205_S_000001.out
-from pyrosetta import *
-from pyrosetta.rosetta.core.pose import *
-from pyrosetta.rosetta.core.select.residue_selector import ResidueIndexSelector
-from pyrosetta.rosetta.protocols.minimization_packing import MinMover
-from pyrosetta.rosetta.core.scoring import *
-from pyrosetta.rosetta.protocols.constraint_generator import *
-from pyrosetta.rosetta.protocols.relax import ClassicRelax
+
 from Bio.PDB import PDBParser, PDBIO, Select
 import os
 import subprocess
@@ -21,7 +15,6 @@ import argparse
 # --------------------------------------------- plz rewrite here!! -----------------------------------------------------
 rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
 ROSETTA3 = "/large/otgk/app/rosetta/v2024.15/source"
-pyrosetta_database = "/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/pyrosetta/database/"
 # ----------------------------------------------------------------------------------------------------------------------
 
 def parse_args():
