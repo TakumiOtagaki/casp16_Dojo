@@ -185,3 +185,108 @@ if __name__ == "__main__":
     main()
 
 
+
+
+"""
+ERRORS:
+
+cmd: /large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease          -s /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb          -sequence "aaaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacuc"          -secstruct "...((.(((((.....[[[[[[[[......))))).)).......]]]]]]]]......."          -nstruct 3         -out:file:silent /large/otgk/casp/casp16/utils/examples/testR1205_FF2_S000001.out         -minimize_rna true
+
+
+
+
+Basic usage:  /large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease  -fasta <fasta file with sequence>  [ -native <native pdb file> ] 
+
+ Type -help for full slate of options.
+
+********  (C) Copyright Rosetta Commons Member Institutions.  ***************
+* Use of Rosetta for commercial purposes may require purchase of a license. *
+********  See LICENSE.md or email license@uw.edu for more details. **********
+core.init: Checking for fconfig files in pwd and ./rosetta/flags 
+core.init: Rosetta version: 2024.15+main.d972b59c53 d972b59c530a12affcbe0eb4a24eedc3ce7d5060 git@github.com:RosettaCommons/rosetta.git 2024-04-02T17:06:29
+core.init: Rosetta extras: []
+core.init: command: /large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease -s /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb -sequence aaaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacuc -secstruct ...((.(((((.....[[[[[[[[......))))).)).......]]]]]]]]....... -nstruct 3 -out:file:silent /large/otgk/casp/casp16/utils/examples/testR1205_FF2_S000001.out -minimize_rna true
+basic.random.init_random_generator: 'RNG device' seed mode, using '/dev/urandom', seed=-279197074 seed_offset=0 real_seed=-279197074
+basic.random.init_random_generator: RandomGenerator:init: Normal mode, seed=-279197074 RG_type=mt19937
+core.init: Resolved executable path: /large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/rna_denovo.default.linuxgccrelease
+core.init: Looking for database based on location of executable: /large/otgk/app/rosetta/v2024.15/database/
+core.chemical.GlobalResidueTypeSet: Finished initializing fa_standard residue type set.  Created 985 residue types
+core.chemical.GlobalResidueTypeSet: Total time to initialize 0.935146 seconds.
+core.import_pose.import_pose: File '/large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb' automatically determined to be of type PDB
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover:    pdb_seq: aaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacuc
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: target_seq: aaaguacccuccaagcccuacagguuggaagagggggcuaucaguccuguaggcagacu
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 3
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 4
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 5
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target a at 6
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 9
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 10
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 12
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 14
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target g at 15
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 18
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 19
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target a at 20
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 21
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 22
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 24
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target u at 26
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target g at 28
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 30
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target g at 31
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 32
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target g at 37
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 38
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 39
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target a at 40
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 41
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 42
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 43
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 44
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 45
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 47
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target u at 48
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target g at 49
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target u at 50
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 51
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target g at 53
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target c at 54
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  g vs target a at 55
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  a vs target g at 56
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target a at 57
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  u vs target c at 58
+protocols.rna.denovo.movers.RNA_DeNovoProtocolMover: mismatch in sequence: pdb  c vs target u at 59
+
+ERROR: The sequence in /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb does not match target sequence!!
+ERROR:: Exit from: src/protocols/rna/denovo/movers/RNA_DeNovoProtocolMover.cc line: 812
+
+[ ERROR ]: Caught exception:
+
+
+File: src/protocols/rna/denovo/movers/RNA_DeNovoProtocolMover.cc:812
+[ ERROR ] UtilityExitException
+ERROR: The sequence in /large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb does not match target sequence!!
+
+
+ ------------------------ Begin developer's backtrace ------------------------- 
+BACKTRACE:
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(backtrace_string[abi:cxx11](int)+0x5a) [0x7fd73e79135a]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::excn::Exception::Exception(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0xe0) [0x7fd73e7cf310]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::UtilityExitException::UtilityExitException(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)+0x113) [0x7fd73e7964d3]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libutility.so(utility::exit(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)+0x3b) [0x7fd73e79611b]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::input_pdb_numbering_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::shared_ptr<core::pose::full_model_info::FullModelParameters> const&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<unsigned long, std::allocator<unsigned long> >, std::allocator<utility::vector1<unsigned long, std::allocator<unsigned long> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<int, std::allocator<int> >, std::allocator<utility::vector1<int, std::allocator<int> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, unsigned long&)+0xbc3) [0x7fd740d79143]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::input_numbering_setup(std::tuple<utility::vector1<int, std::allocator<int> >, utility::vector1<char, std::allocator<char> >, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::tuple<utility::vector1<int, std::allocator<int> >, utility::vector1<char, std::allocator<char> >, utility::vector1<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::shared_ptr<core::pose::full_model_info::FullModelParameters> const&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<int, std::allocator<int> >, std::allocator<utility::vector1<int, std::allocator<int> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&, utility::vector1<utility::vector1<unsigned long, std::allocator<unsigned long> >, std::allocator<utility::vector1<unsigned long, std::allocator<unsigned long> > > >&, utility::vector1<unsigned long, std::allocator<unsigned long> >&)+0xa6) [0x7fd740d87b46]
+/large/otgk/app/rosetta/v2024.15/source/build/src/release/linux/5.15/64/x86/gcc/11/default/libprotocols_d.6.so(protocols::rna::denovo::movers::RNA_DeNovoProtocolMover::de_novo_setup_from_options(utility::options::OptionCollection const&)+0x702) [0x7fd740d88972]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xe998) [0x55f885fc9998]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xff73) [0x55f885fcaf73]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xd1c0) [0x55f885fc81c0]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fd73e145d90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7fd73e145e40]
+/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease(+0xd335) [0x55f885fc8335]
+ ------------------------- End developer's backtrace -------------------------- 
+
+
+AN INTERNAL ERROR HAS OCCURED. PLEASE SEE THE CONTENTS OF ROSETTA_CRASH.log FOR DETAILS.
+
+
+"""
