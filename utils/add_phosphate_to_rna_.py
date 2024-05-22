@@ -1,138 +1,187 @@
-import numpy as np
-import argparse
-
-def read_pdb(file_path):
-    """Read PDB file and return atom coordinates and lines."""
-    atoms = []
-    lines = []
-    chain_id = None
-    with open(file_path, 'r') as file:
-        for line in file:
-            if line.startswith('ATOM'):
-                atoms.append({
-                    'name': line[12:16].strip(),
-                    'residue': line[17:20].strip(),
-                    'chain': line[21],
-                    'resid': int(line[22:26]),
-                    'x': float(line[30:38]),
-                    'y': float(line[38:46]),
-                    'z': float(line[46:54])
-                })
-                if chain_id is None:
-                    chain_id = line[21]  # Get the chain ID from the first ATOM line
-            lines.append(line)
-    return atoms, lines, chain_id
+# conda activate rosetta
+# conda config --add channels https://conda.rosettacommons.org
+# conda install pyrosetta
 
 
-def determine_ribose_conformation(atoms, resid):
-    """Determine the ribose conformation (C2'-endo or C3'-endo) of a given residue."""
-    atom_coords = {atom['name']: np.array([atom['x'], atom['y'], atom['z']]) for atom in atoms if atom['resid'] == resid}
-    c1 = atom_coords['C1\'']
-    c2 = atom_coords['C2\'']
-    c3 = atom_coords['C3\'']
-    c4 = atom_coords['C4\'']
-    o4 = atom_coords['O4\'']
+# pyrosetta database path is needed;
+    # $(pip show pyrosetta)/pyrosetta/database
+
+from pyrosetta import *
+from pyrosetta.rosetta.core.pose import *
+from pyrosetta.rosetta.core.select.residue_selector import ResidueIndexSelector
+from pyrosetta.rosetta.protocols.minimization_packing import MinMover
+from pyrosetta.rosetta.core.scoring import *
+from pyrosetta.rosetta.protocols.constraint_generator import *
+from pyrosetta.rosetta.protocols.relax import ClassicRelax
+
+from Bio import PDB
+import os
+import subprocess
+
+rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
+pyrosetta_database = "/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/pyrosetta/database/"
+
+def cif2pdb(cif_file, pdb_file):
+    parser = PDB.MMCIFParser()
+    structure = parser.get_structure('RNA', cif_file)
+    io = PDB.PDBIO()
+    io.set_structure(structure)
+    io.save(pdb_file)
+
+def merge_pdbs(output_pdb, *pdbs):
+    with open(output_pdb, 'w') as outfile:
+        for fname in pdbs:
+            with open(fname) as infile:
+                for line in infile:
+                    if line.startswith('ATOM'):
+                        outfile.write(line)
+    adjust_atom_indices(output_pdb)
+
+def adjust_atom_indices(pdb_file):
+    parser = PDB.PDBParser()
+    structure = parser.get_structure('Merged', pdb_file)
+    io = PDB.PDBIO()
+    io.set_structure(structure)
+    io.save(pdb_file)
+
+
+def phosphate_free_structure(pdb_file):
+    pose = pose_from_pdb(pdb_file)
+    print(pose.sequence())
+    return pose
+
+def extract_i_to_j_nucleotides(pdb_file, i, j, fragment_pdb_file):
+    parser = PDB.PDBParser()
+    io = PDB.PDBIO()
+    structure = parser.get_structure('RNA', pdb_file)
+    class ResidueSelect(PDB.Select):
+        def accept_residue(self, residue):
+            # i <= x <= j
+            if residue.id[1] >= i and residue.id[1] <= j:
+                return 1
+            return 0
+    io.set_structure(structure)
+    io.save(fragment_pdb_file, select=ResidueSelect())
+    print(f"Extracted nucleotides from {i} to {j} to {fragment_pdb_file}")
+
+# Read a secondary structure file
+# secstruct format:
+    # >filename
+    # sequence
+    # secondary structure
+def read_ss_file(ss_file):
+    with open(ss_file, "r") as f:
+        lines = f.readlines()
+        filename = lines[0].strip()
+        sequence = lines[1].strip()
+        secstruct = lines[2].strip()
+    return filename, sequence, secstruct
+
+def data_loading(pfree_pdb_path, pfree_ss_path):
+    pfree_chunk = phosphate_free_structure(pfree_pdb_path)
+    _, seq, pfree_ss = read_ss_file(pfree_ss_path)
+    assert pfree_chunk.sequence() == seq
+    print("Data loading is done.")
+    return pfree_chunk, pfree_ss
+
+def run_rna_denovo(pfree_pdb, padded_seq, padded_ss, nstruct,  rna_denovo_path, result_models_out_path, padded_pdb):
+    if len(padded_seq) != len(padded_ss):
+        print("Error: length of sequence and secondary structure does not match.")
+        return
     
-    # Calculate torsion angle for C2'-endo or C3'-endo
-    vec_c1c2 = c2 - c1
-    vec_c3c2 = c2 - c3
-    vec_c3c4 = c4 - c3
-    vec_o4c4 = o4 - c4
+    cmd = f'{rna_denovo_path} \
+         -s {pfree_pdb} \
+         -sequence "{padded_seq}" \
+         -secstruct "{padded_ss}" \
+         -nstruct {nstruct} \
+        -out:file:silent {result_models_out_path} \
+        -minimize_rna true'
+    print(f"\n\ncmd: {cmd}\n\n\n")
+    # os.system("source ~/.bashrc")
+    # os.system("module load rosetta")
+    # os.system(cmd)
+    env = os.environ.copy()
+    env["ROSETTA3"] = "/large/otgk/app/rosetta/v2024.15/source"
+    subprocess.run(cmd, shell=True, env=env)
+
+    # .out to pdb
+    # """
+    # echo "silent file to pdb"
+    # rna_extract.linuxgccrelease \
+    # -in:file:silent ${CASP_TARGET}.out \
+    # -in:file:silent_struct_type rna \
+    # -out:file:silent ${CASP_TARGET}.pdb
+    # """
+    # cmd = f"rna_extract.linuxgccrelease -in:file:silent {result_models_out_path} \
+    #     -in:file:silent_struct_type rna \
+    #     -out:file:silent {padded_pdb}"
+    # subprocess.run(cmd, shell=True, env=env)
+
     
-    torsion_angle_c2_endo = np.dot(np.cross(vec_c1c2, vec_c3c2), np.cross(vec_c3c4, vec_o4c4))
-    if torsion_angle_c2_endo > 0:
-        return 'C2\'-endo'
-    else:
-        return 'C3\'-endo'
+def append_residue_to_pose(added_seq, output_tmp_file, input_chunk_pdb):
+    # ファイル末尾に
+        # TER                                                                             
+        # ##Begin comments##
+        # BINARY SILENTFILE FULL_MODEL_PARAMETERS  FULL_SEQUENCE gcccggauagcucagucgguagagcagcgggcacuaugggcgcagugucaauggacgcugacgguacaggccagacaauuauugucugguauagugcccgcggguccaggguucaagucccuguucgggcgcca  CONVENTIONAL_RES_CHAIN A:1-134  INPUT_DOMAIN 1-30,98-134  WORKING 1-134
+        # ##End comments##
+        # ...
+    # のようになっているところがあって、FULL_SEQUENCE の右の配列に文字を付け足せばOK
 
-def add_phosphate(atoms, conformation, resid):
-    """Add a phosphate group to the 5' end of the RNA, adjusting based on ribose conformation."""
-    atom_coords = {atom['name']: np.array([atom['x'], atom['y'], atom['z']]) for atom in atoms if atom['resid'] == resid}
-    if 'O5\'' in atom_coords:
-        anchor_atom = atom_coords['O5\'']
-    else:
-        print("Warning: O5' atom not found, using C5' instead.")
-        anchor_atom = atom_coords['C5\'']
+    with open(input_chunk_pdb, "r") as f:
+        lines = f.readlines()
+        with open(output_tmp_file, "w") as wf:
+            print(f"Writing to {output_tmp_file}")
+            for line in lines:
+                # if line.startswith("##Begin comments##"):
+                #     wf.write(line)
+                #     wf.write(f"BINARY SILENTFILE FULL_MODEL_PARAMETERS  FULL_SEQUENCE {added_seq}\n")
+                #     wf.write("##End comments##\n")
+                # else:
+                #     wf.write(line)
+                if line.startswith("BINARY SILENTFILE FULL_MODEL_PARAMETERS"):
+                    wf.write(f"BINARY SILENTFILE FULL_MODEL_PARAMETERS  FULL_SEQUENCE {added_seq}\n")
+                else:
+                    wf.write(line)
+    return 
     
-    # Reference: Principles of Nucleic Acid Structure (S. Neidle)
-    if conformation == 'C2\'-endo':
-        phosphate_coords = {
-            'P': anchor_atom + np.array([1.6, -0.2, 0.0]),
-            'OP1': anchor_atom + np.array([2.1, 0.5, 0.8]),
-            'OP2': anchor_atom + np.array([2.1, 0.5, -0.8]),
-            'O5\'': anchor_atom
-        }
-    else: # C3'-endo
-        phosphate_coords = {
-            'P': anchor_atom + np.array([1.5, -0.2, 0.0]),
-            'OP1': anchor_atom + np.array([2.0, 0.5, 0.8]),
-            'OP2': anchor_atom + np.array([2.0, 0.5, -0.8]),
-            'O5\'': anchor_atom
-        }
 
-    return phosphate_coords
+def main():
+    # Initialize PyRosetta
+    init(extra_options = f"-database {pyrosetta_database}")
+    chunk_pdb = "/large/otgk/casp/casp16/utils/examples/R1205_FF2_S000001.pdb"
+    pfree_secondary_structure_file = "/large/otgk/casp/casp16/2_R1205/ipknot.secstruct"
+    tmp_pdb = "/large/otgk/casp/casp16/utils/examples/test_pfree_R1205_FF2_S000001.tmp.pdb"
+    # with tmp pdb, we should added the residue to the head of the sequence
 
-def write_pdb(output_path, lines, phosphate_coords, resid, chain_id):
-    """Write the new PDB file with the added phosphate group."""
-    new_lines = []
-    atom_index = 1
-    phosphate_added = False
-    temperature_factor = 0.0
-    for line in lines:
-        if line.startswith('ATOM') and int(line[22:26].strip()) == resid and not phosphate_added:
-            # Add phosphate atoms before the first atom of the residue
-            new_lines.append(f"ATOM  {atom_index:5d}  P    G {chain_id} {resid:4d}    {phosphate_coords['P'][0]:8.3f}{phosphate_coords['P'][1]:8.3f}{phosphate_coords['P'][2]:8.3f}  1.00 {temperature_factor}           P\n")
-            atom_index += 1
-            new_lines.append(f"ATOM  {atom_index:5d}  OP1  G {chain_id} {resid:4d}    {phosphate_coords['OP1'][0]:8.3f}{phosphate_coords['OP1'][1]:8.3f}{phosphate_coords['OP1'][2]:8.3f}  1.00 {temperature_factor}           O\n")
-            atom_index += 1
-            new_lines.append(f"ATOM  {atom_index:5d}  OP2  G {chain_id} {resid:4d}    {phosphate_coords['OP2'][0]:8.3f}{phosphate_coords['OP2'][1]:8.3f}{phosphate_coords['OP2'][2]:8.3f}  1.00 {temperature_factor}           O\n")
-            atom_index += 1
-            # new_lines.append(f"ATOM  {atom_index:5d}  O5'  G {chain_id} {resid:4d}    {phosphate_coords['O5\''][0]:8.3f}{phosphate_coords['O5\''][1]:8.3f}{phosphate_coords['O5\''][2]:8.3f}  1.00 {temperature_factor}           O\n")
-            o5 = phosphate_coords["O5'"]
-            new_lines.append(f"ATOM  {atom_index:5d}  O5'  G {chain_id} {resid:4d}    {o5[0]:8.3f}{o5[1]:8.3f}{o5[2]:8.3f}  1.00 {temperature_factor}           O\n")
 
-            atom_index += 1
-            phosphate_added = True
+    # data loading
+    pfree_chunk, pfree_ss = data_loading(chunk_pdb, pfree_secondary_structure_file)
 
-        if line.startswith('ATOM'):
-            new_lines.append(f"ATOM  {atom_index:5d}{line[11:]}")
-            atom_index += 1
-        else:
-            new_lines.append(line)
-    
-    with open(output_path, 'w') as file:
-        for line in new_lines:
-            file.write(line)
+    # adding one residue to the pose sequence
+    adding = "a"
+    added_sequence = adding + pfree_chunk.sequence()
+    print(added_sequence)
+    # added residue must not form any base pair in secondary structure
+    padded_ss = "." + pfree_ss
 
-def check_residue_id(atoms):
-    """Check if the residue ID for the 5' end is 1 and return the first residue ID."""
-    residue_ids = [atom['resid'] for atom in atoms]
-    first_residue_id = min(residue_ids)
-    if first_residue_id != 1:
-        print(f"Warning: The first residue ID is {first_residue_id}, not 1. Using {first_residue_id} as the residue ID for the 5' end.")
-    return first_residue_id
+    # change tmp_pose's seq to added_sequence
+    append_residue_to_pose(added_sequence, tmp_pdb, chunk_pdb)
+    # append_residue_to_pose(pfree_chunk.sequence(), tmp_pdb, chunk_pdb)
+
+
+    print(added_sequence)
+
+    # run rna_denovo
+    nstruct = 3
+    result_models_out_path = "/large/otgk/casp/casp16/utils/examples/testR1205_FF2_S000001.out"
+    padded_pdb = "/large/otgk/casp/casp16/utils/examples/test_padded_R1205_FF2_S000001.pdb"
+    print(f"Running rna_denovo with {nstruct} structures")
+    run_rna_denovo(tmp_pdb, added_sequence, padded_ss, nstruct, rna_denovo_path, result_models_out_path, padded_pdb)
+
+
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Add a phosphate group to the 5\' end of an RNA PDB file.')
-    parser.add_argument('--input_pdb', required=True, help='Path to the input PDB file')
-    parser.add_argument('--output_pdb', required=True, help='Path to the output PDB file')
-    parser.add_argument('--residue_id', type=int, default=None, help='Residue ID for the 5\' end (default: None)')
-    args = parser.parse_args()
+    main()
 
-    input_pdb = args.input_pdb
-    output_pdb = args.output_pdb
 
-    atoms, lines, chain_ID = read_pdb(input_pdb)
-
-    # If no residue ID is provided, use the first residue ID in the PDB file
-    if args.residue_id is None:
-        residue_id = check_residue_id(atoms)
-    else:
-        residue_id = args.residue_id
-
-    conformation = determine_ribose_conformation(atoms, residue_id)
-    phosphate_coords = add_phosphate(atoms, conformation, residue_id)
-    write_pdb(output_pdb, lines, phosphate_coords, residue_id, chain_ID)
-
-    print(f"Phosphate group added to the 5' end of residue {residue_id} with {conformation} conformation.")
-    print(f"Output PDB file saved to {output_pdb}")
