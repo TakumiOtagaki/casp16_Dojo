@@ -58,7 +58,7 @@ def run_rosetta(pdb_file):
     # os.system(cmd)
     env = os.environ.copy()
     env["ROSETTA3"] = "/large/otgk/app/rosetta/v2024.15/source"
-    subprocess.run(cmd, shell=True, env=env)
+    subprocess.run(cmd, shell=True)
 
 # 抽出する範囲を定義
 alphafold3_cif = "/large/otgk/casp/casp16/1_R1203/for_merging/fold_r1203_s1_model_0.cif"
@@ -69,8 +69,6 @@ extract_and_save_structure(alphafold3_pdb, '/large/otgk/casp/casp16/1_R1203/for_
 # 今回はマージしなくていい。farfar2 の中央部分は固定しないことにする。-s に渡すのは alphafold3 だけ
 
 
-# ファイルをマージしてエネルギー最適化
-# merge_pdbs('merged_output.pdb', 'alphafold3_extracted.pdb', 'farfar2_extracted.pdb', 'alphafold3_extracted2.pdb')
 
 print("Running Rosetta...")
 run_rosetta('alphafold3_terminals.pdb')

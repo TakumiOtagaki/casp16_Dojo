@@ -23,3 +23,6 @@ echo "silent file to pdb"
 rna_extract.linuxgccrelease \
  -in:file:silent ${CASP_TARGET}.out \
  -in:file:silent_struct_type rna \
+
+
+
