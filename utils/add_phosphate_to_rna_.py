@@ -34,6 +34,32 @@ def parse_args():
     parser.add_argument("--nstruct", "-n", type=int, default=1, help="Number of structures to generate.")
     # parser.add_argument("--output_dir", "-d", type=str, default="./", help="Directory to move output files to. This is because Rosetta generates output files in the current directory. You should execute this script in the directory where you want to store the output files since error may cause when the same name files are already exist in the directory.")
     args = parser.parse_args()
+
+    if not os.path.exists(args.initial_structure_pdb):
+        print("Error: initial structure PDB file not found.")
+        return
+    if not os.path.exists(args.fasta):
+        print("Error: sequence file not found.")
+        return
+    if not os.path.exists(args.secondary_structure_file):
+        print("Error: secondary structure file not found.")
+        return
+    if args.fiveprime_added_out == "" or args.fiveprime_added_out is None:
+        print("Error: output silent file not found.")
+        return
+    # if not os.path.exists(args.output_structure_pdb):
+    #     print("Error: output structure PDB file not found.")
+    #     return
+    # if not os.path.exists(args.output_dir):
+    #     print("Error: output directory not found.")
+    #     return
+    if args.adding_residue != args.adding_residue.lower():
+        print("Error: adding residue must be lower case.")
+        return
+    if args.nstruct < 1:
+        print("Error: nstruct must be greater than or equal to 1.")
+        return
+    
     return args
 
 
