@@ -1,5 +1,5 @@
 # ABOUT Utils
-## add_phosphate_to_rna_.py
+## utils/add_phosphate_to_rna_.py
 ### 概要
 `add_phosphate_to_rna.py`は、RNAの5'末端にリン酸基（P、OP1、OP2）を追加するためのPythonスクリプトです。このスクリプトは、入力PDBファイルを読み込み、指定された残基IDのリボース環のコンフォメーション（C2'-endoまたはC3'-endo）に基づいてリン酸基を適切に追加します。
 
