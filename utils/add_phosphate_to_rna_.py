@@ -118,7 +118,7 @@ def run_rna_denovo(pfree_pdb, padded_seq, padded_ss, nstruct,  rna_denovo_path, 
     # subprocess.run(cmd, shell=True, env=env)
 
     
-def append_residue_to_pose(added_seq, output_tmp_file, input_chunk_pdb):
+def append_residue_to_pose(added_seq, output_tmp_file, input_chunk_pdb, num_of_atoms):
     # ファイル末尾に
         # TER                                                                             
         # ##Begin comments##
@@ -132,16 +132,30 @@ def append_residue_to_pose(added_seq, output_tmp_file, input_chunk_pdb):
         with open(output_tmp_file, "w") as wf:
             print(f"Writing to {output_tmp_file}")
             for line in lines:
-                # if line.startswith("##Begin comments##"):
-                #     wf.write(line)
-                #     wf.write(f"BINARY SILENTFILE FULL_MODEL_PARAMETERS  FULL_SEQUENCE {added_seq}\n")
-                #     wf.write("##End comments##\n")
-                # else:
-                #     wf.write(line)
                 if line.startswith("BINARY SILENTFILE FULL_MODEL_PARAMETERS"):
                     wf.write(f"BINARY SILENTFILE FULL_MODEL_PARAMETERS  FULL_SEQUENCE {added_seq}\n")
+                elif line.startswith("ATOM"): # most major starting
+                    # ATOM      1  C5'   A A   1       2.322   1.219   0.000  1.00  0.00           C  
+                    # ATOM      2  C4'   A A   1       3.793   0.984   0.237  1.00  0.00           C  
+                    # ATOM      3  O4'   A A   1       3.940   0.414   1.570  1.00  0.00           O  
+                    # ATOM      4  C3'   A A   1       4.479   0.022  -0.722  1.00  0.00           C  
+                    # ATOM      5  O3'   A A   1       5.828   0.366  -0.982  1.00  0.00           O  
+                    # ATOM      6  C1'   A A   1       4.630  -0.825   1.489  1.00  0.00           C  
+                    # ATOM      7  C2'   A A   1       4.461  -1.295   0.049  1.00  0.00           C  
+                    # ATOM      8  O2'   A A   1       5.573  -2.109  -0.296  1.00  0.00           O  
+                    # ATOM      9  N1    A A   1       5.445  -3.947   5.506  1.00  0.00           N  
+                    # ATOM     10  C2    A A   1       6.267  -3.169   4.789  1.00  0.00           C  
+                    # インデックスを "a" が含んでいる原子の数だけインクリメントする
+                    index_ = int(line.split()[1])
+                    index_ += num_of_atoms
+                    print(f"index_: {index_}")
+                    wf.write(f"{line[:6]}{index_:>4}{line[10:]}")
                 else:
                     wf.write(line)
+
+
+
+
     return 
     
 
@@ -158,14 +172,15 @@ def main():
     pfree_chunk, pfree_ss = data_loading(chunk_pdb, pfree_secondary_structure_file)
 
     # adding one residue to the pose sequence
-    adding = "a"
+    adding, num_of_atoms = "a", 31 # adenine consists of 31 atoms in pdb format
     added_sequence = adding + pfree_chunk.sequence()
     print(added_sequence)
     # added residue must not form any base pair in secondary structure
     padded_ss = "." + pfree_ss
 
+
     # change tmp_pose's seq to added_sequence
-    append_residue_to_pose(added_sequence, tmp_pdb, chunk_pdb)
+    append_residue_to_pose(added_sequence, tmp_pdb, chunk_pdb, num_of_atoms)
     # append_residue_to_pose(pfree_chunk.sequence(), tmp_pdb, chunk_pdb)
 
 
