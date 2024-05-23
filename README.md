@@ -1,5 +1,5 @@
 # ABOUT Utils
-## utils/add_phosphate_to_rna_.py
+## utils/add_residue_to_rna_.py
 ### 概要
 `add_phosphate_to_rna.py`は、RNAの5'末端にリン酸基（P、OP1、OP2）を追加するためのPythonスクリプトです。このスクリプトは、入力PDBファイルを読み込み、指定された残基IDのリボース環のコンフォメーション（C2'-endoまたはC3'-endo）に基づいてリン酸基を適切に追加します。
 
@@ -19,8 +19,8 @@
 
 ### HOW TO USE
 ```sh
-python3 '/large/otgk/casp/casp16/utils/add_phosphate_to_rna_.py' --help
-usage: add_phosphate_to_rna_.py [-h] [--initial_structure_pdb INITIAL_STRUCTURE_PDB] [--fasta FASTA] [--secondary_structure_file SECONDARY_STRUCTURE_FILE] [--fiveprime_added_out FIVEPRIME_ADDED_OUT]
+python3 '/large/otgk/casp/casp16/utils/add_residue_to_rna_.py' --help
+usage: add_residue_to_rna_.py [-h] [--initial_structure_pdb INITIAL_STRUCTURE_PDB] [--fasta FASTA] [--secondary_structure_file SECONDARY_STRUCTURE_FILE] [--fiveprime_added_out FIVEPRIME_ADDED_OUT]
                                 [--adding_residue ADDING_RESIDUE] [--nstruct NSTRUCT] [--output_dir OUTPUT_DIR]
 
 adding a residue to the RNA structure and re-running farfar2 with Rosetta, which enables us to predict the RNA tertiary structure with 5 prime phosphate.
@@ -62,7 +62,7 @@ uuuugcccuuu
 
 ```sh
 cd utils
-python3 add_phosphate_to_rna_.py -pdb examples/rna_initial.pdb -f examples/rna.fasta -ss examples/rna.secstruct -o examples/rna.out -r a -n 2
+python3 add_residue_to_rna_.py -pdb examples/rna_initial.pdb -f examples/rna.fasta -ss examples/rna.secstruct -o examples/rna.out -r a -n 2
 ```
 
 
@@ -103,10 +103,21 @@ echo $ROSETTA3
 ```
 これが空じゃなかったら上手く install できている。
 
-#### change `utils/add_phosphate_to_rna_.py` script
-`utils/add_phosphate_to_rna_.py` の16 ~ 18 行目を変更する。
+#### change `utils/add_residue_to_rna_.py` script
+`utils/add_residue_to_rna_.py` の16 ~ 18 行目を変更する。
 
 ```py
 rna_denovo_path = "/path/to/rna_denovo.default.linuxgccrelease"
 ROSETTA3 = "/path/to/rosetta/source" # これは上で確認した $ROSETTA3 の中身
 ```
+
+
+## formatter.py
+このスクリプトはPDBファイルを処理し、以下の変更を行います：
+
+先頭の残基を削除（オプションで保持可能）
+残基番号と原子番号を振り直し
+チェーンIDをアルファベットまたは数字に変更
+水素原子を削除
+原子名が1文字を超える場合に警告を出力
+すべての原子の占有率を1.00に設定
