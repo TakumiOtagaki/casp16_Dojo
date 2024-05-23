@@ -98,8 +98,6 @@ def pdb_formater(input_file, output_file, remove_first_residue=True, verbose=Fal
     io.set_structure(structure)
     io.save(output_file, NonHydrogenSelector())
 
-
-
 def main():
     args = parse_args()
 
