@@ -86,7 +86,7 @@ python3 add_residue_to_rna_.py -pdb examples/rna_initial.pdb -f examples/rna.fas
 ```
 このようなエラーは無視できる。pdb ファイルのコメント行を読み込んでいるだけ。
 
-### INSTALLATION of utils/add_phosphate_to_rna_,py
+### INSTALLATION of utils/add_residue_to_rna_,py
 #### cloning this repo
 ```
 git clone git@github.com:TakumiOtagaki/casp16_Dojo.git
@@ -95,6 +95,10 @@ git clone git@github.com:TakumiOtagaki/casp16_Dojo.git
 #### installation of rosetta
 https://new.rosettacommons.org/demos/latest/tutorials/install_build/install_build
 
+### installation of biopython
+```
+conda install -c conda-forge biopython
+```
 
 #### check your env related to rosetta
 ```sh
