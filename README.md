@@ -64,7 +64,7 @@ uuuugcccuuu
 cd utils
 python3 add_residue_to_rna_.py -pdb examples/rna_initial.pdb -f examples/rna.fasta -ss examples/rna.secstruct -o examples/rna.out -r a -n 2
 ```
-
+これで OK.
 
 
 #### errors you can ignore
@@ -112,12 +112,82 @@ ROSETTA3 = "/path/to/rosetta/source" # これは上で確認した $ROSETTA3 の
 ```
 
 
-## formatter.py
+## utils/formatter.py
+### 概要
 このスクリプトはPDBファイルを処理し、以下の変更を行います：
 
-先頭の残基を削除（オプションで保持可能）
-残基番号と原子番号を振り直し
-チェーンIDをアルファベットまたは数字に変更
-水素原子を削除
-原子名が1文字を超える場合に警告を出力
-すべての原子の占有率を1.00に設定
+- 先頭の残基を削除（オプションで保持可能）
+- 残基番号と原子番号を振り直し
+- チェーンIDをアルファベットまたは数字に変更
+- 水素原子を削除
+- 原子名が1文字を超える場合に警告を出力
+- すべての原子の占有率を1.00に設定
+
+## utils/add_residue_to_rna_.py と utils/formatter.py を組み合わせる
+```sh
+python3 '/large/otgk/casp/casp16/utils/formatter.py' --help
+usage: formatter.py [-h] [--input_file INPUT_FILE] [--output_file OUTPUT_FILE] [--keep_first_residue] [--verbose]
+
+Process and format a PDB file. The first residue is removed by default but can be kept with the --keep_first_residue option. The output file is formatted with
+renumbered residues and atoms, chain IDs, and occupancy set to 1.00.
+
+options:
+  -h, --help            show this help message and exit
+  --input_file INPUT_FILE, -i INPUT_FILE
+                        Path to the input PDB file.
+  --output_file OUTPUT_FILE, -o OUTPUT_FILE
+                        Path to the output formatted PDB file.
+  --keep_first_residue  Keep the first residue. By default, the first residue is removed.
+  --verbose, -v         Print additional information.
+```
+
+実際に `utils/examples/S_000001.pdb` に対して formatting を行って、`utils/examples/S_000001.formatted.pdb`を作成したいとすると、
+```sh
+python3 'utils/formatter.py' -i 'utils/examples/S_000001.pdb' -o utils/examples/S_000001.formatted.pdb 
+```
+とすればOK.
+
+
+また、add_residue_to_rna_.py によって出力した構造以外を入力としたい場合など、
+先頭残基を消去したくないのであれば、
+`--keep_first_residue` とすることによって先頭の残基（残基ID = 1）のものを消去せずにそのまま放置する。P, OP2, OP1, O5' から始まっていない場合は警告を出す。
+
+
+
+
+## rna_format_validation.py
+format の validation を行う。
+### HOW TO USE
+```sh
+python3 '/large/otgk/casp/casp16/utils/rna_formatter.py' --help
+usage: rna_formatter.py [-h] [--input_file INPUT_FILE] [--output_file OUTPUT_FILE] [--keep_first_residue] [--verbose]
+
+Process and format a PDB file. The first residue is removed by default but can be kept with the --keep_first_residue
+option. The output file is formatted with renumbered residues and atoms, chain IDs, and occupancy set to 1.00.
+
+options:
+  -h, --help            show this help message and exit
+  --input_file INPUT_FILE, -i INPUT_FILE
+                        Path to the input PDB file.
+  --output_file OUTPUT_FILE, -o OUTPUT_FILE
+                        Path to the output formatted PDB file.
+  --keep_first_residue  Keep the first residue. By default, the first residue is removed.
+  --verbose, -v         Print additional information.
+```
+
+### 検証項目
+- 水素原子の非存在
+  - 構造内の水素原子が削除されていることを確認します。
+- 残基IDとインデックスの連続性
+  - 残基番号と原子番号が1から始まり、単調増加であること（+1ずつ）を確認します。
+- 元素名の長さ
+  - 全原子の元素名が1文字であることを確認します。複数文字の元素名には警告を発します。
+- RNAのチェーンID
+  - RNAのチェーンIDが数値で0から始まることを確認します。
+- 占有率の確認
+  - 全原子の占有率（Occupancy）が1.00であることを確認します。
+- 先頭残基の特定原子の順序
+  - 先頭残基の最初の4つの原子がP, OP2, OP1, O5'の順に配置されていることを確認します。
+
+検証して違反している点があれば warning が出る。
+warning の個数も最後に表示される。
