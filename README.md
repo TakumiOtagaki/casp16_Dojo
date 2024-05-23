@@ -116,7 +116,7 @@ ROSETTA3 = "/path/to/rosetta/source" # これは上で確認した $ROSETTA3 の
 ```
 
 
-## utils/formatter.py
+## utils/rna_formatter.py
 ### 概要
 このスクリプトはPDBファイルを処理し、以下の変更を行います：
 
@@ -127,10 +127,10 @@ ROSETTA3 = "/path/to/rosetta/source" # これは上で確認した $ROSETTA3 の
 - 原子名が1文字を超える場合に警告を出力
 - すべての原子の占有率を1.00に設定
 
-## utils/add_residue_to_rna_.py と utils/formatter.py を組み合わせる
+## utils/add_residue_to_rna_.py と utils/rna_formatter.py を組み合わせる
 ```sh
-python3 '/large/otgk/casp/casp16/utils/formatter.py' --help
-usage: formatter.py [-h] [--input_file INPUT_FILE] [--output_file OUTPUT_FILE] [--keep_first_residue] [--verbose]
+python3 '/large/otgk/casp/casp16/utils/rna_formatter.py' --help
+usage: rna_formatter.py [-h] [--input_file INPUT_FILE] [--output_file OUTPUT_FILE] [--keep_first_residue] [--verbose]
 
 Process and format a PDB file. The first residue is removed by default but can be kept with the --keep_first_residue option. The output file is formatted with
 renumbered residues and atoms, chain IDs, and occupancy set to 1.00.
@@ -147,7 +147,7 @@ options:
 
 実際に `utils/examples/S_000001.pdb` に対して formatting を行って、`utils/examples/S_000001.formatted.pdb`を作成したいとすると、
 ```sh
-python3 'utils/formatter.py' -i 'utils/examples/S_000001.pdb' -o utils/examples/S_000001.formatted.pdb 
+python3 'utils/rna_formatter.py' -i 'utils/examples/S_000001.pdb' -o utils/examples/S_000001.formatted.pdb 
 ```
 とすればOK.
 
@@ -163,20 +163,15 @@ python3 'utils/formatter.py' -i 'utils/examples/S_000001.pdb' -o utils/examples/
 format の validation を行う。
 ### HOW TO USE
 ```sh
-python3 '/large/otgk/casp/casp16/utils/rna_formatter.py' --help
-usage: rna_formatter.py [-h] [--input_file INPUT_FILE] [--output_file OUTPUT_FILE] [--keep_first_residue] [--verbose]
+python3 '/large/otgk/casp/casp16/utils/rna_format_validation.py' --help
+usage: rna_format_validation.py [-h] [--pdb_file PDB_FILE]
 
-Process and format a PDB file. The first residue is removed by default but can be kept with the --keep_first_residue
-option. The output file is formatted with renumbered residues and atoms, chain IDs, and occupancy set to 1.00.
+Validate a PDB file against specific structural criteria.
 
 options:
   -h, --help            show this help message and exit
-  --input_file INPUT_FILE, -i INPUT_FILE
-                        Path to the input PDB file.
-  --output_file OUTPUT_FILE, -o OUTPUT_FILE
-                        Path to the output formatted PDB file.
-  --keep_first_residue  Keep the first residue. By default, the first residue is removed.
-  --verbose, -v         Print additional information.
+  --pdb_file PDB_FILE, -i PDB_FILE
+                        Path to the PDB file to validate.
 ```
 
 ### 検証項目
