@@ -92,7 +92,6 @@ def validate_pdb_file(pdb_file_path):
 
     return valid, cnt_of_warnings
 
-
 def main():
     parser = argparse.ArgumentParser(description="Validate a PDB file against specific structural criteria.")
     parser.add_argument("--pdb_file", "-i", help="Path to the PDB file to validate.")
