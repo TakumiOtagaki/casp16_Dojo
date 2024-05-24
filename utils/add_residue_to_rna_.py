@@ -14,6 +14,7 @@ import argparse
 
 # --------------------------------------------- plz rewrite here!! -----------------------------------------------------
 rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
+rna_extract_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_extract.default.linuxgccrelease"
 ROSETTA3 = "/large/otgk/app/rosetta/v2024.15/source"
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -84,7 +85,7 @@ def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct, 
     subprocess.run(cmd, shell=True, env=env)
 
     # .out to pdb
-    cmd = f"rna_extract.linuxgccrelease -in:file:silent {finalStructureOut}  -in:file:silent_struct_type rna"
+    cmd = f"{rna_extract_path} -in:file:silent {finalStructureOut}  -in:file:silent_struct_type rna"
     subprocess.run(cmd, shell=True, env=env)
 
 class IncrementResidueNumbers(Select):
@@ -127,13 +128,13 @@ def main():
     modified_ss = "." * len(adding) + initial_secondary_structure
 
     # tmp_pdb = args.output_dir + "tmp.pdb" should deal with "/"
-    tmp_pdb  = "tmp.pdb"
+    modifiedStructurePDB  = "tmp.pdb"
 
     # Append residue to the modified structure and renumber
-    renumber_residues(args.initial_structure_pdb, tmp_pdb, len(adding))
+    renumber_residues(args.initial_structure_pdb, modifiedStructurePDB, len(adding))
 
     # Run RNA de novo
-    run_rna_denovo(tmp_pdb, extended_sequence, modified_ss, args.nstruct, rna_denovo_path, args.fiveprime_added_out)
+    run_rna_denovo(modifiedStructurePDB, extended_sequence, modified_ss, args.nstruct, rna_denovo_path, args.fiveprime_added_out)
 
 
 
