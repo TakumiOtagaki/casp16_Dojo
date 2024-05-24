@@ -111,8 +111,9 @@ echo $ROSETTA3
 `utils/add_residue_to_rna_.py` の16 ~ 18 行目を変更する。
 
 ```py
-rna_denovo_path = "/path/to/rna_denovo.default.linuxgccrelease"
-ROSETTA3 = "/path/to/rosetta/source" # これは上で確認した $ROSETTA3 の中身
+rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
+rna_extract_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_extract.default.linuxgccrelease" 
+ROSETTA3 = "/large/otgk/app/rosetta/v2024.15/source" # これは上で確認した $ROSETTA3 の中身
 ```
 
 
