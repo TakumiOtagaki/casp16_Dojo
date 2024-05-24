@@ -104,6 +104,5 @@ def main():
         print("PDB file has errors; plz check the warnings above.")
         print(f"Total warnings: {cnt}")
 
-    
 if __name__ == "__main__":
     main()
