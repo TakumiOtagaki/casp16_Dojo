@@ -104,6 +104,5 @@ def main():
     pdb_formater(args.input_file, args.output_file, remove_first_residue=args.keep_first_residue, verbose=args.verbose)
     print(f"Formatted PDB file saved to {args.output_file}")
 
-
 if __name__ == "__main__":
     main()
