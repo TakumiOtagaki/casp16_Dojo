@@ -1,4 +1,43 @@
 # ABOUT Utils
+
+## 一発で formatting とリン酸基付与をやってしまう
+### `python` 環境整える
+以下のコードを実行
+```sh
+cd $this_repo # edit here
+conda create -n rosetta python=3.10.14
+pip install -r utils/requirements.txt
+```
+
+### 実行
+1. `utils/formatting_template.sh`をコピー
+2. 25 ~ 34 行目を正しく書き換える
+  - `$workdir/unformatted/` 以下に 5 つの unformatted かつ リン酸基が付いていないような pdb ファイルが入っていなくてはならない！それを入力にしてコードが動く
+  - 「`$workdir/$CASP_ID.fa`: ターゲットの fasta file」 が存在しなくてはならない
+    - fasta file の塩基は必ず小文字でなくてはならない
+  - 「`$workdir/$CASP_ID.secstruct`：ターゲットの secondary structure file」が存在しなくてはならない
+  - `$workdir/formatted` とか `$workdir/padded` とかが中間生成物としてできるが、無視して良い。
+  - `$workdir/merged_for_submission/`に最終生成ファイルができる。
+
+ちなみに `.secstruct` ファイルについては
+
+```.secstruct file
+> sequence name
+塩基配列（a, t, g, c）
+二次構造（ dot bracket）
+```
+のように3行で構成されている必要がある。
+
+これら全ての条件が満たされていたら、
+
+```sh
+bash formatting_template.sh
+```
+で全て自動で終わる。
+
+
+
+
 ## utils/add_residue_to_rna_.py
 ### 概要
 `add_residue_to_rna.py`は、RNAの5'末端にリン酸基（P、OP1、OP2）を追加するためのPythonスクリプトです。このスクリプトは、入力PDBファイルを読み込み、指定された残基IDのリボース環のコンフォメーション（C2'-endoまたはC3'-endo）に基づいてリン酸基を適切に追加します。
@@ -21,23 +60,30 @@
 ```sh
 python3 '/large/otgk/casp/casp16/utils/add_residue_to_rna_.py' --help
 usage: add_residue_to_rna_.py [-h] [--initial_structure_pdb INITIAL_STRUCTURE_PDB] [--fasta FASTA] [--secondary_structure_file SECONDARY_STRUCTURE_FILE] [--fiveprime_added_out FIVEPRIME_ADDED_OUT]
-                                [--adding_residue ADDING_RESIDUE] [--nstruct NSTRUCT] [--output_dir OUTPUT_DIR]
+                              [--adding_residue ADDING_RESIDUE] [--nstruct NSTRUCT] [--rna_denovo_path RNA_DENOVO_PATH] [--rna_extract_path RNA_EXTRACT_PATH] [--rosetta3 ROSETTA3]
 
-adding a residue to the RNA structure and re-running farfar2 with Rosetta, which enables us to predict the RNA tertiary structure with 5 prime residue.
+adding a residue to the RNA structure and re-running farfar2 with Rosetta, which enables us to predict the RNA tertiary structure with 5 prime phosphate.
 
 options:
   -h, --help            show this help message and exit
-  --initial_structure_pdb INITIAL_STRUCTURE_PDB
+  --initial_structure_pdb INITIAL_STRUCTURE_PDB, -pdb INITIAL_STRUCTURE_PDB
                         Path to the initial structure PDB file.
-  --fasta FASTA         Path to the sequence file. The sequence should be in 'single' FASTA format.
-  --secondary_structure_file SECONDARY_STRUCTURE_FILE
+  --fasta FASTA, -f FASTA
+                        Path to the sequence file. The sequence should be in 'single' FASTA format.
+  --secondary_structure_file SECONDARY_STRUCTURE_FILE, -ss SECONDARY_STRUCTURE_FILE
                         Path to the secondary structure file.format: >filename sequence secondary structure
-  --fiveprime_added_out FIVEPRIME_ADDED_OUT
+  --fiveprime_added_out FIVEPRIME_ADDED_OUT, -o FIVEPRIME_ADDED_OUT
                         Path for the output silent file from RNA de novo.
-  --adding_residue ADDING_RESIDUE
-                        Residue to add to the 5' end of the sequence. if you want, you can add more than one residue. However, you should notice all the residues you selected will be attached to the 5' end of the
-                        sequence. And you must use lower case.
-  --nstruct NSTRUCT     Number of structures to generate.
+  --adding_residue ADDING_RESIDUE, -r ADDING_RESIDUE
+                        Residue to add to the 5' end of the sequence. if you want, you can add more than one residue. However, you should notice all the residues you selected will be attached to the 5' end of the sequence. And
+                        you must use lower case.
+  --nstruct NSTRUCT, -n NSTRUCT
+                        Number of structures to generate.
+  --rna_denovo_path RNA_DENOVO_PATH
+                        Path to the RNA de novo executable.
+  --rna_extract_path RNA_EXTRACT_PATH
+                        Path to the RNA extract executable.
+  --rosetta3 ROSETTA3   Path to the Rosetta3 directory.
 
 ```
 -  output directory: 
@@ -62,29 +108,14 @@ uuuugcccuuu
 
 ```sh
 cd utils
-python3 add_residue_to_rna_.py -pdb examples/rna_initial.pdb -f examples/rna.fasta -ss examples/rna.secstruct -o examples/rna.out -r a -n 2
+python3 add_residue_to_rna_.py -pdb examples/rna_initial.pdb -f examples/rna.fasta -ss examples/rna.secstruct -o examples/rna.out -r a -n 2 \
+ --rna_extract_path $rna_extract_path \
+ --rna_denovo_path $rna_denovo_path \
+ --rosetta3 $ROSETTA3
 ```
 これで OK.
 
 
-#### errors you can ignore
-```sh
-/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/Bio/PDB/PDBParser.py:388: PDBConstructionWarning: Ignoring unrecognized record '##Begi' at line 1904
-  warnings.warn(
-/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/Bio/PDB/PDBParser.py:388: PDBConstructionWarning: Ignoring unrecognized record 'BINARY' at line 1905
-  warnings.warn(
-/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/Bio/PDB/PDBParser.py:388: PDBConstructionWarning: Ignoring unrecognized record '##End ' at line 1906
-  warnings.warn(
-/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/Bio/PDB/PDBParser.py:388: PDBConstructionWarning: Ignoring unrecognized record 'N_BS 5' at line 1907
-  warnings.warn(
-/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/Bio/PDB/PDBParser.py:388: PDBConstructionWarning: Ignoring unrecognized record 'N_NWC ' at line 1908
-  warnings.warn(
-/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/Bio/PDB/PDBParser.py:388: PDBConstructionWarning: Ignoring unrecognized record 'N_WC 1' at line 1909
-  warnings.warn(
-/home/otgk/.conda/envs/rosetta/lib/python3.10/site-packages/Bio/PDB/PDBParser.py:388: PDBConstructionWarning: Ignoring unrecognized record 'score ' at line 1910
-  warnings.warn(
-```
-このようなエラーは無視できる。pdb ファイルのコメント行を読み込んでいるだけ。
 
 ### INSTALLATION of utils/add_residue_to_rna_,py
 #### cloning this repo
@@ -107,14 +138,13 @@ echo $ROSETTA3
 ```
 これが空じゃなかったら上手く install できている。
 
-#### change `utils/add_residue_to_rna_.py` script
-`utils/add_residue_to_rna_.py` の16 ~ 18 行目を変更する。
 
-```py
-rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
-rna_extract_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_extract.default.linuxgccrelease" 
-ROSETTA3 = "/large/otgk/app/rosetta/v2024.15/source" # これは上で確認した $ROSETTA3 の中身
+そしてこの $ROSETTA3 が --rosetta3 の引数であって、
+```sh
+python utils/add_residue_to_rna_.py ... --rosetta3 $ROSETTA3
 ```
+のようにコールしてやる。
+
 
 
 ## utils/rna_formatter.py
