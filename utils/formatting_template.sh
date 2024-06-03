@@ -56,13 +56,16 @@ for pdb_file in "${un_formatted_pdbs[@]}"; do
     echo "Processing file: $pdb_base"
 
     python $repo_dir/utils/add_residue_to_rna_.py -pdb ${workdir}/unformatted/${pdb_base}.pdb \
-     -f ${workdir}/R1212.fa -ss ${workdir}/R1212.secstruct \
+     -f ${workdir}/${CASP_ID}.fa -ss ${workdir}/${CASP_ID}.secstruct \
      -o ${workdir}/p_added/${pdb_base}.out -r a \
      -n 1 \
      --rna_extract_path $rna_extract_path \
      --rna_denovo_path $rna_denovo_path \
      --rosetta3 $ROSETTA3
     python $repo_dir/utils/rna_formatter.py -i ${workdir}/p_added/S_000001.pdb -o ${workdir}/formatted/${pdb_base}.formatted.pdb
+
+    echo "format validation:"
+    python $repo_dir/utils/rna_format_validation.py -i ${workdir}/formatted/${pdb_base}.formatted.pdb
 done
 rm tmp.pdb
 
