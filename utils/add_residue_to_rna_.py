@@ -12,7 +12,7 @@ import subprocess
 from modules.myutils import read_ss_file, read_singlefasta
 import argparse
 
-# --------------------------------------------- plz rewrite here!! -----------------------------------------------------
+# --------------------------------------------- # default -----------------------------------------------------
 rna_denovo_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_denovo.default.linuxgccrelease"
 rna_extract_path = "/large/otgk/app/rosetta/v2024.15/source/bin/rna_extract.default.linuxgccrelease"
 ROSETTA3 = "/large/otgk/app/rosetta/v2024.15/source"
@@ -33,6 +33,11 @@ def parse_args():
     parser.add_argument("--adding_residue", "-r",
                         type=str, default="a", help="Residue to add to the 5' end of the sequence. if you want, you can add more than one residue. However, you should notice all the residues you selected will be attached to the 5' end of the sequence. And you must use lower case.")
     parser.add_argument("--nstruct", "-n", type=int, default=1, help="Number of structures to generate.")
+
+    parser.add_argument("--rna_denovo_path", type=str, default=rna_denovo_path, help="Path to the RNA de novo executable.")
+    parser.add_argument("--rna_extract_path", type=str, default=rna_extract_path, help="Path to the RNA extract executable.")
+    parser.add_argument("--rosetta3", type=str, default=ROSETTA3, help="Path to the Rosetta3 directory.")
+
     # parser.add_argument("--output_dir", "-d", type=str, default="./", help="Directory to move output files to. This is because Rosetta generates output files in the current directory. You should execute this script in the directory where you want to store the output files since error may cause when the same name files are already exist in the directory.")
     args = parser.parse_args()
 
@@ -65,7 +70,7 @@ def parse_args():
 
 
 
-def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct,  rna_denovo_path, finalStructureOut):
+def run_rna_denovo(modifiedStructurePDB, extendedSequence, modifiedss, nstruct,  rna_denovo_path, finalStructureOut, rna_deno_path, rna_extract_path):
     if len(extendedSequence) != len(modifiedss):
         print("Error: length of sequence and secondary structure does not match.")
         return
@@ -134,7 +139,7 @@ def main():
     renumber_residues(args.initial_structure_pdb, modifiedStructurePDB, len(adding))
 
     # Run RNA de novo
-    run_rna_denovo(modifiedStructurePDB, extended_sequence, modified_ss, args.nstruct, rna_denovo_path, args.fiveprime_added_out)
+    run_rna_denovo(modifiedStructurePDB, extended_sequence, modified_ss, args.nstruct, rna_denovo_path, args.fiveprime_added_out, args.rna_denovo_path, args.rna_extract_path)
 
 
 
