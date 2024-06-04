@@ -1,4 +1,3 @@
-# ID=000031
 . ~/.bashrc
 
 #$workdir
@@ -28,10 +27,10 @@ rna_extract_path=$ROSETTA3/bin/rna_extract.default.linuxgccrelease
 
 # otagaki's repo directory
 repo_dir=/large/otgk/casp/casp16
-CASP_ID=R1212 
+CASP_ID=R1221s3
 
 # working dir
-workdir=/large/otgk/casp/casp16/R1212 # this dir should contain unformatted/*.pdb
+workdir=/large/otgk/casp/casp16/12_R1221s3 # this dir should contain unformatted/*.pdb
 
 #                                                                                                                             #
 # ------------------------------------------------------- plz edit here -------------------------------------------------------
