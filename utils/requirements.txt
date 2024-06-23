@@ -10,10 +10,8 @@ packaging==24.0
 pandas==2.2.2
 pillow==10.3.0
 pyparsing==3.1.2
-pyrosetta==2024.19+release.a34b73c
 python-dateutil==2.9.0.post0
 pytz==2024.1
-rosetta==0.3
 scikit-learn==1.4.2
 scipy==1.13.0
 seaborn==0.13.2
