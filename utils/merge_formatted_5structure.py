@@ -26,6 +26,8 @@ def merge_pdb_files(input_dir, output_file, casp_target_id):
                 outfile.write("TER\n")
                 outfile.write("ENDMDL\n")
                 model_index += 1
+            outfile.write("END\n")
+            
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Merge multiple PDB files into one.')
