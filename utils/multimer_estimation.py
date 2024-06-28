@@ -12,6 +12,7 @@ from Bio.PDB import Model
 from Bio.PDB import Structure
 import numpy as np
 import sys
+torch.autograd.set_detect_anomaly(True)
 
 
 class RNAOptimizationModel(nn.Module):
@@ -71,7 +72,7 @@ class RNAOptimizationModel(nn.Module):
                         self.coordinates.append(c1_coord)
         self.coordinates = torch.stack(self.coordinates).view(-1, 3).float()
 
-    def compress_coordinates(self, threshold=0.9):
+    def compress_coordinates(self, threshold=0.70):
         initial_count = len(self.coordinates)
         compressed_coords = []
         i = 0
@@ -97,9 +98,7 @@ class RNAOptimizationModel(nn.Module):
     def calculate_boxes(self):
         print("hi")
         min_coords = torch.min(self.coordinates, dim=0).values
-        print("min")
         max_coords = torch.max(self.coordinates, dim=0).values
-        print("hi")
         self.box = torch.stack([min_coords, max_coords], dim=0)  # [2, 3]
         print("end hi")
 
@@ -142,7 +141,7 @@ class RNAOptimizationModel(nn.Module):
 
         # 位置ベクトルを追加するために形状を合わせる
         positions_expanded = positions.unsqueeze(1)  # [n_units, 1, 3]
-        transformed += positions_expanded
+        transformed = transformed + positions_expanded  # [n_units, n_coordinates, 3]
         # L1 term
         L1 = torch.mean(torch.sum(transformed**2, dim=[1, 2]))
         # Global center of mass term
@@ -154,6 +153,7 @@ class RNAOptimizationModel(nn.Module):
         L_center_of_mass = self.alpha * torch.sum(global_com**2)
 
         # Interaction term
+        print("L_interaction")
         L_interaction = torch.tensor(0.0, device=self.device)
         for i in range(n):
             for j in range(i + 1, n):
@@ -164,10 +164,12 @@ class RNAOptimizationModel(nn.Module):
                         # Gaussian penalty for being too close
                         penalty = torch.exp(-(dist_squared -
                                               self.delta**2) / self.sigma**2)
-                        L_interaction += self.lambda1 * penalty
+                        # L_interaction += self.lambda1 * penalty
+                        L_interaction = L_interaction + self.lambda1 * penalty
 
         # L_interaction / (n * (n - 1) * m**2)
         L_interaction = L_interaction / (n * (n - 1) * m**2)
+        print("L_overlap")
         L_overlap = self.calculate_overlap_loss(
             positions, rotations) * self.lambda2 * 3
 
@@ -182,14 +184,19 @@ class RNAOptimizationModel(nn.Module):
 
         for i in range(n):
             box = self.box.clone()
-            box[0] = torch.matmul(rotations[i], box[0]) + positions[i]
-            box[1] = torch.matmul(rotations[i], box[1]) + positions[i]
+            # box[0] = torch.matmul(rotations[i], box[0]) + positions[i]
+            # box[1] = torch.matmul(rotations[i], box[1]) + positions[i]
+            tmp = torch.zeros(2, 3, device=self.device)
+            tmp[0] = tmp[0] + torch.matmul(rotations[i], box[0]) + positions[i]
+            tmp[1] = tmp[1] + torch.matmul(rotations[i], box[1]) + positions[i]
+            box = box + tmp
+            
             boxes.append(box)
 
         for i in range(n):
             for j in range(i + 1, n):
                 overlap = self.box_overlap_volume(boxes[i], boxes[j])
-                L_overlap += overlap
+                L_overlap = L_overlap + overlap
 
         return L_overlap
 
@@ -242,65 +249,66 @@ class RNAOptimizationModel(nn.Module):
         print(f"Saved optimized structure to {output_path}")
 
 
-def optimize_and_plot(n_values, epochs, input_monomer_pdb, output_dir, device):
-    losses_per_n = {}
+def optimize_and_plot(n, epochs, input_monomer_pdb, output_dir, device):
+    model = RNAOptimizationModel(
+        n_units=n, pdb_file_path=input_monomer_pdb, device=device)
+    optimizer = optim.Adam(model.parameters(), lr=15)
+    losses = []
 
-    for n in n_values:
-        model = RNAOptimizationModel(
-            n_units=n, pdb_file_path=input_monomer_pdb, device=device)
-        optimizer = optim.Adam(model.parameters(), lr=15)
-        losses = []
+    for epoch in range(epochs):
+        # 初めは lr を大きくしておく
+        if epoch == 100:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = 0.1
+        elif epoch == 800:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = 0.01
+        optimizer.zero_grad()
+        loss = model()
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.item())
+        print(f"N: {n}, Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}")
+        # # 定期的に pdb を保存
+        # if (epoch + 1) % 100 == 0:
+        if epoch % 100 == 0:
+            output_pdb = f"{output_dir}/S_000001_optimized.{n}mer_epoch{epoch}.pdb"
+            model.save_pdb(output_pdb)
 
-        for epoch in range(epochs):
-            # 初めは lr を大きくしておく
-            if epoch == 100:
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = 0.1
-            elif epoch == 800:
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = 0.01
-            optimizer.zero_grad()
-            loss = model()
-            loss.backward()
-            optimizer.step()
-            losses.append(loss.item())
-            print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}")
-            # # 定期的に pdb を保存
-            # if (epoch + 1) % 100 == 0:
-            if epoch % 100 == 0:
-                output_pdb = f"{output_dir}/S_000001_optimized.{n}mer_epoch{epoch}.pdb"
-                model.save_pdb(output_pdb)
-
-        # Save the model and parameters
-        output_pdb = f"{output_dir}/S_000001_optimized.{n}mer.pdb"
-        parameter_file = f"{output_dir}/S_000001_optimized.{n}mer.params"
-        model.save_pdb(output_pdb)
-        torch.save(model.state_dict(), parameter_file)
+    # Save the model and parameters
+    output_pdb = f"{output_dir}/S_000001_optimized.{n}mer.pdb"
+    parameter_file = f"{output_dir}/S_000001_optimized.{n}mer.params"
+    model.save_pdb(output_pdb)
+    torch.save(model.state_dict(), parameter_file)
 
         # Store losses for plotting
-        losses_per_n[n] = losses
-
-    # Plotting
-    plt.figure(figsize=(10, 5))
-    for n, losses in losses_per_n.items():
-        plt.plot(losses, label=f'n = {n}')
-    plt.title('Loss over Epochs for Different n Values')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.savefig(f"{output_dir}/loss_plot.png")
-    plt.show()
-
+    return losses
 
 # Parameters
 n_values = range(2, 11)
 epochs = 1000
-pjt_dir = "."
-input_monomer_pdb = pjt_dir + "/2_R1205/pdb/S_000001.pdb"
-output_dir = pjt_dir + "/2_R1205/pdb/multimer"
+# pjt_dir = "."
+pjt_dir = "/work/gs58/s58007/casp16_Dojo" # wisteria
+input_monomer_pdb = pjt_dir + "/R0254/pdb/S_000144.pdb"
+output_dir = pjt_dir + "/R0254/pdb/multimer"
 
 # Device setup
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 # Run optimization and plotting
-optimize_and_plot(n_values, epochs, input_monomer_pdb, output_dir, device)
+import multiprocessing as mp
+with mp.Pool(9) as pool:
+    results = pool.starmap(optimize_and_plot, [(n, epochs, input_monomer_pdb, output_dir, device) for n in n_values])
+
+# Plot the losses
+plt.figure(figsize=(10, 6))
+for n, losses in zip(n_values, results):
+    plt.plot(losses, label=f"{n}-mer")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.yscale("log")
+plt.legend()
+plt.title("Losses during optimization")
+plt.savefig(f"{output_dir}/losses.png")
+
