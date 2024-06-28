@@ -183,7 +183,7 @@ def optimize_and_plot(n_values, epochs, input_monomer_pdb, output_dir, device):
     for n in n_values:
         model = RNAOptimizationModel(
             n_units=n, pdb_file_path=input_monomer_pdb, device=device)
-        optimizer = optim.Adam(model.parameters(), lr=0.1)
+        optimizer = optim.Adam(model.parameters(), lr=10)
         losses = []
 
         for epoch in range(epochs):
@@ -197,6 +197,10 @@ def optimize_and_plot(n_values, epochs, input_monomer_pdb, output_dir, device):
             optimizer.step()
             losses.append(loss.item())
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}")
+            # 定期的に pdb を保存
+            if (epoch + 1) % 100 == 0:
+                output_pdb = f"{output_dir}/S_000001_optimized.{n}mer_epoch{epoch+1}.pdb"
+                model.save_pdb(output_pdb)
 
         # Save the model and parameters
         output_pdb = f"{output_dir}/S_000001_optimized.{n}mer.pdb"
