@@ -5,12 +5,17 @@ import torch.optim as optim
 import math
 from Bio.PDB import PDBParser, Select
 from Bio.PDB.PDBIO import PDBIO
-from Bio.PDB.Chain import Chain
-from Bio.PDB.Residue import Residue
+from Bio.PDB import Chain
+from Bio.PDB import Residue
+from Bio.PDB import Atom
+from Bio.PDB import Model
+from Bio.PDB import Structure
+import numpy as np
+import sys
 
 
 class RNAOptimizationModel(nn.Module):
-    def __init__(self, n_units, pdb_file_path, spacing=300.0, device='cpu', alpha=1.0, lambda1=0.5, lambda2=0.5, delta=1.0, sigma=1.0, compression=True):
+    def __init__(self, n_units, pdb_file_path, spacing=300.0, device='cpu', alpha=1.0, lambda1=10, lambda2=10, delta=1.0, sigma=1.0, compression=True):
         super(RNAOptimizationModel, self).__init__()
         self.n_units = n_units
         self.device = device
@@ -38,24 +43,35 @@ class RNAOptimizationModel(nn.Module):
         self.structure = self.parser.get_structure('RNA', pdb_file_path)
         self.coordinates = []  # List to store coordinates
         self.extract_coordinates()
+        print(f"Extracted {len(self.coordinates)} coordinates from PDB file")
         if compression:
             self.compress_coordinates()
+        print(f"Compressed coordinates to {len(self.coordinates)} atoms")
+        print("box start")
+        self.calculate_boxes()
 
     def extract_coordinates(self):
+        # valid_residues =
         for model in self.structure:
             for chain in model:
                 for residue in chain:
-                    if 'P' in residue and 'C1\'' in residue:
-                        p_coord = residue['P'].get_vector()
+                    # if 'P' in residue and 'C1\'' in residue:
+                    #     p_coord = residue['P'].get_vector()
+                    #     c1_coord = residue['C1\''].get_vector()
+                    #     p_coord = torch.tensor(
+                    #         [p_coord[0], p_coord[1], p_coord[2]], device=self.device)
+                    #     c1_coord = torch.tensor(
+                    #         [c1_coord[0], c1_coord[1], c1_coord[2]], device=self.device)
+                    #     self.coordinates.extend([p_coord, c1_coord])
+                    # C1 だけにする
+                    if 'C1\'' in residue:
                         c1_coord = residue['C1\''].get_vector()
-                        p_coord = torch.tensor(
-                            [p_coord[0], p_coord[1], p_coord[2]], device=self.device)
                         c1_coord = torch.tensor(
                             [c1_coord[0], c1_coord[1], c1_coord[2]], device=self.device)
-                        self.coordinates.extend([p_coord, c1_coord])
+                        self.coordinates.append(c1_coord)
         self.coordinates = torch.stack(self.coordinates).view(-1, 3).float()
 
-    def compress_coordinates(self, threshold=0.7):
+    def compress_coordinates(self, threshold=0.9):
         initial_count = len(self.coordinates)
         compressed_coords = []
         i = 0
@@ -78,6 +94,15 @@ class RNAOptimizationModel(nn.Module):
         print(
             f"Compressed from {initial_count} to {len(self.coordinates)} atoms")
 
+    def calculate_boxes(self):
+        print("hi")
+        min_coords = torch.min(self.coordinates, dim=0).values
+        print("min")
+        max_coords = torch.max(self.coordinates, dim=0).values
+        print("hi")
+        self.box = torch.stack([min_coords, max_coords], dim=0)  # [2, 3]
+        print("end hi")
+
     def forward(self):
         rotations = self.compute_rotation_matrices(self.euler_angles)
         loss = self.compute_loss(self.positions, rotations)
@@ -91,16 +116,16 @@ class RNAOptimizationModel(nn.Module):
         cos_psi, sin_psi = torch.cos(psi), torch.sin(psi)
         Rz = torch.stack([torch.stack([cos_psi, -sin_psi, torch.zeros_like(psi)], dim=-1),
                           torch.stack(
-                              [sin_psi, cos_psi, torch.zeros_like(psi)], dim=-1),
-                          torch.stack([torch.zeros_like(psi), torch.zeros_like(psi), torch.ones_like(psi)], dim=-1)], dim=-2)
+            [sin_psi, cos_psi, torch.zeros_like(psi)], dim=-1),
+            torch.stack([torch.zeros_like(psi), torch.zeros_like(psi), torch.ones_like(psi)], dim=-1)], dim=-2)
         Ry = torch.stack([torch.stack([cos_theta, torch.zeros_like(theta), sin_theta], dim=-1),
                           torch.stack([torch.zeros_like(theta), torch.ones_like(
                               theta), torch.zeros_like(theta)], dim=-1),
                           torch.stack([-sin_theta, torch.zeros_like(theta), cos_theta], dim=-1)], dim=-2)
         Rx = torch.stack([torch.stack([torch.ones_like(phi), torch.zeros_like(phi), torch.zeros_like(phi)], dim=-1),
                           torch.stack(
-                              [torch.zeros_like(phi), cos_phi, -sin_phi], dim=-1),
-                          torch.stack([torch.zeros_like(phi), sin_phi, cos_phi], dim=-1)], dim=-2)
+            [torch.zeros_like(phi), cos_phi, -sin_phi], dim=-1),
+            torch.stack([torch.zeros_like(phi), sin_phi, cos_phi], dim=-1)], dim=-2)
         R = torch.matmul(Rz, Ry)
         R = torch.matmul(R, Rx)
         return R
@@ -138,42 +163,82 @@ class RNAOptimizationModel(nn.Module):
                             (transformed[i, x1] - transformed[j, x2])**2)
                         # Gaussian penalty for being too close
                         penalty = torch.exp(-(dist_squared -
-                                            self.delta**2) / self.sigma**2)
+                                              self.delta**2) / self.sigma**2)
                         L_interaction += self.lambda1 * penalty
 
-        total_loss = L1 + L_center_of_mass
-        L_interaction / (n * (n - 1) * m**2)
+        # L_interaction / (n * (n - 1) * m**2)
+        L_interaction = L_interaction / (n * (n - 1) * m**2)
+        L_overlap = self.calculate_overlap_loss(
+            positions, rotations) * self.lambda2 * 3
 
-        return L1 + L_center_of_mass + L_interaction
+        total_loss = L1 + L_center_of_mass + L_interaction + L_overlap
+
+        return total_loss
+
+    def calculate_overlap_loss(self, positions, rotations):
+        n = positions.size(0)
+        L_overlap = torch.tensor(0.0, device=self.device)
+        boxes = []
+
+        for i in range(n):
+            box = self.box.clone()
+            box[0] = torch.matmul(rotations[i], box[0]) + positions[i]
+            box[1] = torch.matmul(rotations[i], box[1]) + positions[i]
+            boxes.append(box)
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                overlap = self.box_overlap_volume(boxes[i], boxes[j])
+                L_overlap += overlap
+
+        return L_overlap
+
+    def box_overlap_volume(self, box1, box2):
+        min_corner1, max_corner1 = box1
+        min_corner2, max_corner2 = box2
+
+        overlap_min = torch.max(min_corner1, min_corner2)
+        overlap_max = torch.min(max_corner1, max_corner2)
+        overlap_dims = torch.clamp(overlap_max - overlap_min, min=0)
+        overlap_volume = torch.prod(overlap_dims)
+
+        return overlap_volume
+# from Bio.PDB import PDBIO, Chain, Residue, Atom, Model, Structure
 
     def save_pdb(self, output_path):
-        # Set up PDB structure
         io = PDBIO()
-        # Use the first model in the loaded structure as a template
-        s = self.structure[0]
-        new_structure = s.copy()
-        new_structure.detach_parent()
+        # 新しい空の構造を作成
+        new_structure = Structure.Structure('optimized_structure')
+        model = Model.Model(0)  # 新しいモデルを作成
+        new_structure.add(model)
 
-        # Generate new chains based on the optimized positions and rotations
-        chain_id = 'A'
-        for i, (pos, rot) in enumerate(zip(self.positions, self.compute_rotation_matrices(self.euler_angles))):
-            chain = Chain(chain_id)
-            new_structure.add(chain)
-            for j, residue in enumerate(s.get_residues()):
-                new_residue = Residue(
-                    residue.id, residue.resname, residue.segid)
+        # 利用可能なChain IDを生成
+        available_chain_ids = (id for id in map(
+            chr, range(65, 91)))  # 'A' to 'Z'
+
+        # 回転行列と位置ベクトルを用いて各chainの座標を更新
+        for i, (position, rotation) in enumerate(zip(self.positions.detach().cpu().numpy(), self.compute_rotation_matrices(self.euler_angles).detach().cpu().numpy())):
+            chain_id = next(available_chain_ids, None)
+            if chain_id is None:
+                raise ValueError("Available chain IDs exhausted.")
+            chain = Chain.Chain(chain_id)  # 新しいChainインスタンスを作成
+            model.add(chain)
+
+            # チェーンの各残基と原子に対して変換を適用
+            for residue_id, residue in enumerate(self.structure.get_residues(), start=1):
+                new_residue = Residue.Residue(
+                    (' ', residue_id, ' '), residue.get_resname(), residue.segid)
                 chain.add(new_residue)
                 for atom in residue:
-                    new_atom = atom.copy()
-                    new_atom.transform(rot, pos)
+                    # 各原子に対して回転と平行移動を適用
+                    transformed_coord = np.dot(rotation, atom.coord) + position
+                    new_atom = Atom.Atom(atom.get_name(), transformed_coord, atom.get_bfactor(
+                    ), atom.get_occupancy(), atom.get_altloc(), atom.get_fullname(), atom.get_serial_number())
                     new_residue.add(new_atom)
 
-            chain_id = chr(ord(chain_id) + 1)  # Increment chain ID
-
-        # Save the new structure to a PDB file
+        # 新しい構造をPDBファイルに保存
         io.set_structure(new_structure)
         io.save(output_path)
-
         print(f"Saved optimized structure to {output_path}")
 
 
@@ -183,12 +248,15 @@ def optimize_and_plot(n_values, epochs, input_monomer_pdb, output_dir, device):
     for n in n_values:
         model = RNAOptimizationModel(
             n_units=n, pdb_file_path=input_monomer_pdb, device=device)
-        optimizer = optim.Adam(model.parameters(), lr=10)
+        optimizer = optim.Adam(model.parameters(), lr=15)
         losses = []
 
         for epoch in range(epochs):
             # 初めは lr を大きくしておく
             if epoch == 100:
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = 0.1
+            elif epoch == 800:
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = 0.01
             optimizer.zero_grad()
@@ -197,9 +265,10 @@ def optimize_and_plot(n_values, epochs, input_monomer_pdb, output_dir, device):
             optimizer.step()
             losses.append(loss.item())
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}")
-            # 定期的に pdb を保存
-            if (epoch + 1) % 100 == 0:
-                output_pdb = f"{output_dir}/S_000001_optimized.{n}mer_epoch{epoch+1}.pdb"
+            # # 定期的に pdb を保存
+            # if (epoch + 1) % 100 == 0:
+            if epoch % 100 == 0:
+                output_pdb = f"{output_dir}/S_000001_optimized.{n}mer_epoch{epoch}.pdb"
                 model.save_pdb(output_pdb)
 
         # Save the model and parameters
@@ -226,9 +295,9 @@ def optimize_and_plot(n_values, epochs, input_monomer_pdb, output_dir, device):
 # Parameters
 n_values = range(2, 11)
 epochs = 1000
-pjt_dir = "./"
-input_monomer_pdb = pjt_dir + "2_R1205/pdb/S_000001.pdb"
-output_dir = pjt_dir + "2_R1205/pdb/multimer/"
+pjt_dir = "."
+input_monomer_pdb = pjt_dir + "/2_R1205/pdb/S_000001.pdb"
+output_dir = pjt_dir + "/2_R1205/pdb/multimer"
 
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
