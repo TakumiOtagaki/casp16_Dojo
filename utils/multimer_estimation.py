@@ -16,7 +16,7 @@ import sys
 
 
 class RNAOptimizationModel(nn.Module):
-    def __init__(self, n_units, pdb_file_path, spacing=75.0, device='cpu', alpha=1.0, lambda1=1, lambda2=1, delta=0.1, sigma=1.0, compression=True):
+    def __init__(self, n_units, pdb_file_path, spacing=75.0, device='cpu', alpha=1.0, lambda1=1, lambda2=1, delta=1.0, sigma=0.5, compression=True):
         super(RNAOptimizationModel, self).__init__()
         self.n_units = n_units
         self.device = device
@@ -57,8 +57,8 @@ class RNAOptimizationModel(nn.Module):
         if compression:
             self.compress_coordinates()
         print(f"Compressed coordinates to {len(self.coordinates)} atoms")
-        print("box start")
-        self.calculate_boxes()
+        # print("box start")
+        # self.calculate_boxes()
 
     def extract_coordinates(self):
         # valid_residues =
@@ -81,7 +81,7 @@ class RNAOptimizationModel(nn.Module):
                         self.coordinates.append(c1_coord)
         self.coordinates = torch.stack(self.coordinates).view(-1, 3).float()
 
-    def compress_coordinates(self, threshold=0.9):
+    def compress_coordinates(self, threshold=0.7):
         initial_count = len(self.coordinates)
         compressed_coords = []
         i = 0
@@ -149,11 +149,12 @@ class RNAOptimizationModel(nn.Module):
         # 位置ベクトルを追加するために形状を合わせる
         positions_expanded = positions.unsqueeze(1)  # [n_units, 1, 3]
         transformed = transformed + positions_expanded  # [n_units, n_coordinates, 3]
-        # L1 term
-        L1 = torch.mean(torch.sum(transformed**2, dim=[1, 2]))
         # Global center of mass term
         global_com = torch.sum(self.positions, dim=0)
         L_center_of_mass = self.alpha * torch.sum(global_com**2)
+        # L1 term
+        # L1 = torch.mean(torch.sum(transformed**2, dim=[1, 2]))
+        L1 = torch.sum(torch.sum((transformed - global_com)**2, dim=[1, 2])) / (n * m)
         # Interaction terms (not fully implemented here, placeholder for now)
 
         # Placeholder for interaction term calculations
@@ -170,18 +171,18 @@ class RNAOptimizationModel(nn.Module):
                             (transformed[i, x1] - transformed[j, x2])**2)
                         # Gaussian penalty for being too close
                         penalty = torch.exp(-(dist_squared -
-                                              self.delta**2) / self.sigma**2)
+                                              (4 * self.delta**2)) / self.sigma**2)
                         # L_interaction += self.lambda1 * penalty
                         L_interaction = L_interaction + self.lambda1 * penalty
 
         # L_interaction / (n * (n - 1) * m**2)
-        L_interaction = L_interaction / (n * (n - 1) * m**2)
+        L_interaction = L_interaction / (n * (n - 1))
         # print("L_overlap")
         # L_overlap = (self.calculate_overlap_loss(
         #     positions, rotations) * self.lambda2  / (n * (n - 1)))
 
-        total_loss = L1 + L_center_of_mass + L_interaction + L_overlap
-        print(f"\tn{n}, L1: {L1}, L_center_of_mass: {L_center_of_mass}, L_interaction: {L_interaction}, L_overlap: {L_overlap}")
+        total_loss = L1 + L_center_of_mass + L_interaction
+        print(f"\tn{n}, L1: {L1}, L_center_of_mass: {L_center_of_mass}, L_interaction: {L_interaction}")
 
         return total_loss
 
@@ -276,9 +277,9 @@ def optimize_and_plot(n, epochs, input_monomer_pdb, output_dir, device):
         loss = model()
         loss.backward()
         # 確率的勾配を加える
-        if epoch % 10 == 0:
-            for param in model.parameters():
-                param.grad += 0.01 * torch.randn_like(param)
+        # if epoch % 10 == 0:
+        #     for param in model.parameters():
+        #         param.grad += 0.01 * torch.randn_like(param)
         optimizer.step()
         losses.append(loss.item())
         print(f"N: {n}, Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}")
@@ -299,7 +300,7 @@ def optimize_and_plot(n, epochs, input_monomer_pdb, output_dir, device):
 
 # Parameters
 n_values = range(2, 11)
-epochs = 1000
+epochs = 100
 # pjt_dir = "."
 # pjt_dir = "/work/gs58/s58007/casp16_Dojo" # wisteria
 pjt_dir = "/large/otgk/casp/casp16" # mdx
@@ -312,7 +313,7 @@ device = torch.device("cpu")
 
 # Run optimization and plotting
 import multiprocessing as mp
-with mp.Pool(9) as pool:
+with mp.Pool(4) as pool:
     results = pool.starmap(optimize_and_plot, [(n, epochs, input_monomer_pdb, output_dir, device) for n in n_values])
 
 # Plot the losses

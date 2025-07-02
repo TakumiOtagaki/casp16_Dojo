@@ -37,6 +37,7 @@ def parse_args():
     parser.add_argument("--rna_denovo_path", type=str, default=rna_denovo_path, help="Path to the RNA de novo executable.")
     parser.add_argument("--rna_extract_path", type=str, default=rna_extract_path, help="Path to the RNA extract executable.")
     parser.add_argument("--rosetta3", type=str, default=ROSETTA3, help="Path to the Rosetta3 directory.")
+    parser.add_argument("--multi_fasta", "-m", action="store_true", help="If this flag is set, the sequence file is treated as a multi-FASTA file.")
 
     # parser.add_argument("--output_dir", "-d", type=str, default="./", help="Directory to move output files to. This is because Rosetta generates output files in the current directory. You should execute this script in the directory where you want to store the output files since error may cause when the same name files are already exist in the directory.")
     args = parser.parse_args()
@@ -124,6 +125,8 @@ def main():
     args = parse_args()
 
     # Data loading
+    # print(f"args: {args}")
+    # print("Loading data...: ",  read_ss_file(args.secondary_structure_file))
     _, _seq, initial_secondary_structure = read_ss_file(args.secondary_structure_file)
     seq = read_singlefasta(args.fasta)
 

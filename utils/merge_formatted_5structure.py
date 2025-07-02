@@ -3,8 +3,8 @@ import argparse
 
 def merge_pdb_files(input_dir, output_file, casp_target_id):
     pdb_files = [f for f in os.listdir(input_dir) if f.endswith('.pdb')]
-    if len(pdb_files) != 5:
-        raise ValueError(f"Input directory must contain exactly 5 PDB files: {input_dir}. Found {len(pdb_files)} files.")
+    # if len(pdb_files) != 5:
+    #     raise ValueError(f"Input directory must contain exactly 5 PDB files: {input_dir}. Found {len(pdb_files)} files.")
     pdb_files.sort()  # 必要に応じてファイル名でソート
 
     header = f"PFRMAT TS\nTARGET {casp_target_id}\nAUTHOR 0652-1349-3580\nREMARK\nMETHOD newMXfold2 + FARFAR2\n"

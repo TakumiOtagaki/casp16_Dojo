@@ -37,9 +37,9 @@ layers = parse_layers(input_string)
 print(layers)
 # sys.exit()
 colors = {
-    1: 'red',    # 1st layer
-    2: 'green',  # 2nd layer
-    3: 'blue'    # 3rd layer
+    1: 'white',    # 1st layer
+    2: 'red',  # 2nd layer
+    3: 'green'    # 3rd layer
 }
 
 
